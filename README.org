@@ -4,4 +4,6 @@
   uv init --name djangosrh --app --vcs git --python 3.12
   uv add django
   uv run django-admin startproject djangosrh
+  cd djangosrh/
+  uv run python manage.py startapp ital
 #+end_src
