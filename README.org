@@ -1,0 +1,6 @@
+* Initial setup
+
+#+begin_src shell :exports code
+  uv init --name djangosrh --app --vcs git --python 3.12
+  uv add django
+#+end_src
