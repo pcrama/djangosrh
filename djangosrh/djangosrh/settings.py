@@ -24,14 +24,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = getenv('DJANGO_SECRET_KEY', 'django-insecure-cga^!j+*dz9z6s@%%7ab0niu+92)efsxm^&@5=o+-tgv#r$6z2')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = getenv('DJANGO_DEBUG', 'false').lower() in ['true', '1', 'yes', 'debug']
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [] if DEBUG else getenv('DJANGO_ALLOWED_HOSTS', '').split(',')
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'ital.apps.ItalConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

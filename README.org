@@ -6,4 +6,5 @@
   uv run django-admin startproject djangosrh
   cd djangosrh/
   uv run python manage.py startapp ital
+  uv run python manage.py migrate
 #+end_src
