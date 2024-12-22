@@ -8,3 +8,8 @@
   uv run python manage.py startapp ital
   uv run python manage.py migrate
 #+end_src
+
+* Testing
+#+begin_src shell :exports code
+  (cd djangosrh ; python manage.py test)
+#+end_src

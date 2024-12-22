@@ -3,37 +3,16 @@ from django.db import models
 from enum import Enum
 
 
-# Event:
-# 1."souper italien"@2024-03-29
-# Item:
-# 1. Tomate Mozza; starter
-# 2. Croquettes; starter
-# 3. Bolo; main
-# 4. Scampis; main
-# 5. Vegetarian; main
-# 6. Tiramisu; dessert
-# 7. Glace; dessert
-# Choice
-# 1. Tomate Mozza (single); 9EUR; event_id=1; item_ids=[1]
-# 2. Croquettes (single); 8EUR; event_id=1; item_ids=[2]
-# 3. Bolo (single); 12EUR; event_id=1; item_ids=[3]
-# 4. Tiramisu (single); 6EUR; event_id=1; item_ids=[6]
-# 5. Child menu; 20EUR; event_id=1; item_ids=[3, 5, 6, 7]
-# 6. Bolo menu; 22EUR; event_id=1; item_ids=[1, 2, 3, 6]
-# 7. Scampi menu; 27EUR; event_id=1; item_ids=[1, 2, 4, 6]
-# 8. Anything goes menu; 25EUR; event_id=1; item_ids=[1, 2, 3, 4, 5, 6, 7]
-# Reservation
-# 1. Mr Dupont; dupont@yopmail.fr; [(choice_id_1,[(1,2)]),(choice_id_5,[(3,0),(5,3),(6,1),(7,2)])]; 78EUR
-#        reservation_id=1; choice_id=1; item_id=1; count=2
-#        reservation_id=1; choice_id=5; item_id=3; count=0 (optional row?)
-#        reservation_id=1; choice_id=5; item_id=5; count=3
-#        reservation_id=1; choice_id=5; item_id=6; count=1
-#        reservation_id=1; choice_id=5; item_id=7; count=2
-
-class Civility(models.Choices):
+class Civility(models.TextChoices):
     man = "Mr"
     woman = "Mme"
     __empty__ = ""
+
+
+class DishType(models.TextChoices):
+    STARTER = "starter"
+    MAIN = "main"
+    DESSERT = "dessert"
 
 
 class Event(models.Model):
@@ -83,7 +62,12 @@ class Reservation(models.Model):
     email = models.CharField(max_length=200)
     accepts_rgpd_reuse = models.BooleanField()
     total_due_in_cents = models.IntegerField()
+    places = models.IntegerField()
 
     def __str__(self):
         fullname = " ".join(x for x in (self.civility, self.first_name, self.last_name) if x and x.strip())
         return f"{fullname} ({self.email})"
+
+    def count_items(self, item: Item|int) -> int:
+        item_id = item.id if isinstance(item, Item) else item
+        return sum(it.count for it in self.reservationitemcount_set.filter(item_id=item_id))
