@@ -1,0 +1,14 @@
+{% load currency_filter %}
+
+<html>
+  <head>
+    <title>{{ reservation.full_name }}</title>
+  </head>
+  <body>
+    <p>
+      Hello, {{ reservation.full_name }}.
+      <br>
+      You have reserved {{ reservation.places }} places for {{ reservation.total_due_in_cents|cents_to_euros }}.
+    </p>
+  </body>
+</html>

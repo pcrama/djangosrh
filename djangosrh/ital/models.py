@@ -66,9 +66,12 @@ class Reservation(models.Model):
     places = models.IntegerField()
     uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
 
+    @property
+    def full_name(self) -> str:
+        return " ".join(x for x in (self.civility, self.first_name, self.last_name) if x and x.strip())
+
     def __str__(self):
-        fullname = " ".join(x for x in (self.civility, self.first_name, self.last_name) if x and x.strip())
-        return f"{fullname} ({self.email})"
+        return f"{self.full_name} ({self.email})"
 
     def count_items(self, item: Item|int) -> int:
         item_id = item.id if isinstance(item, Item) else item
