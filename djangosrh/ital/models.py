@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 
 from enum import Enum
@@ -63,6 +64,7 @@ class Reservation(models.Model):
     accepts_rgpd_reuse = models.BooleanField()
     total_due_in_cents = models.IntegerField()
     places = models.IntegerField()
+    uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
 
     def __str__(self):
         fullname = " ".join(x for x in (self.civility, self.first_name, self.last_name) if x and x.strip())
