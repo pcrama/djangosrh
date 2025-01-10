@@ -38,6 +38,7 @@ class Item(models.Model):
     display_text = models.CharField(max_length=200)
     column_header = models.CharField(max_length=200)
     short_text = models.CharField(max_length=200)
+    dish = models.CharField(max_length=10, choices=DishType)
     choices = models.ManyToManyField(Choice)
 
     def __str__(self):
@@ -54,6 +55,9 @@ class ReservationItemCount(models.Model):
             models.UniqueConstraint(fields=['choice_id', 'item_id', 'reservation_id'], name='reservation*item*choice'),
             # TODO: constrain all choices to be for the same event
         ]
+
+    def __repr__(self):
+        return f"<ReservationItemCount {self.id}, {self.count}*{self.item} from {self.choice}>"
 
 
 class Reservation(models.Model):

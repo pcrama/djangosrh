@@ -1,0 +1,42 @@
+{% load currency_filter %}
+
+<html>
+  <head>
+    <title>{{ event.name }}</title>
+  </head>
+  <body>
+    <form action="{% url 'reservation_form' event.id %}" method="post">
+      {% csrf_token %}
+      {% for choice in choices %}
+      <div style="border: 1px solid black;">
+        <div>{{ choice.0 }} ({{ choice.0.price_in_cents|cents_to_euros }})</div>
+        <div style="border: 1px solid green;">
+          {% for item_id, item in choice.1.starter.items %}
+          <div {% if item.error %}style="background: red;" {% endif %}>
+            <label for="{{ item_id }}">{{ item.item }}</label>
+            <input id="{{ item_id }}" name="{{ item_id }}" value="{{ item.count }}" type="number" min="0">
+          </div>
+          {% endfor %}
+        </div>
+        <div style="border: 1px solid green;">
+          {% for item_id, item in choice.1.main.items %}
+          <div {% if item.error %}style="background: red;" {% endif %}>
+            <label for="{{ item_id }}">{{ item.item }}</label>
+            <input id="{{ item_id }}" name="{{ item_id }}" value="{{ item.count }}" type="number" min="0">
+          </div>
+          {% endfor %}
+        </div>
+        <div style="border: 1px solid green;">
+          {% for item_id, item in choice.1.dessert.items %}
+          <div {% if item.error %}style="background: red;" {% endif %}>
+            <label for="{{ item_id }}">{{ item.item }}</label>
+            <input id="{{ item_id }}" name="{{ item_id }}" value="{{ item.count }}" type="number" min="0">
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+      <input type="submit" value="OK">
+    </form>
+  <body>
+</html>
