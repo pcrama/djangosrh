@@ -11,9 +11,9 @@ class Civility(models.TextChoices):
 
 
 class DishType(models.TextChoices):
-    STARTER = "starter"
-    MAIN = "main"
-    DESSERT = "dessert"
+    DT0STARTER = "dt0starter"
+    DT1MAIN = "dt1main"
+    DT2DESSERT = "dt2dessert"
 
 
 class Event(models.Model):
@@ -68,6 +68,7 @@ class Reservation(models.Model):
     accepts_rgpd_reuse = models.BooleanField()
     total_due_in_cents = models.IntegerField()
     places = models.IntegerField()
+    extra_comment = models.CharField(default="", max_length=200)
     uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
 
     @property

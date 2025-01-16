@@ -2,38 +2,71 @@
 
 <html>
   <head>
-    <title>{{ event.name }}</title>
+    <title>{{ form.event.name }}</title>
   </head>
   <body>
-    <form action="{% url 'reservation_form' event.id %}" method="post">
+    <form action="{% url 'reservation_form' form.event.id %}" method="post">
       {% csrf_token %}
-      {% for choice in choices %}
+      <div class="row"><label for="{{ form.first_name.id }}">Prénom</label> <input id="{{ form.first_name.id }}" name="{{ form.first_name.name }}" type="text" value="{{ form.first_name.value }}"></div>
+      <div class="row"><label for="{{ form.last_name.id }}">Nom</label> <input id="{{ form.last_name.id }}" name="{{ form.last_name.name }}" required="required" type="text" value="{{ form.last_name.value }}"></div>
+      <div class="row"><label for="{{ form.email.id }}">E-mail</label> <input id="{{ form.email.id }}" name="{{ form.email.name }}" required="required" type="email" value="{{ form.email.value }}"></div>
+      <div class="row"><label for="{{ form.extra_comment.id }}">Commentaire (p.ex. pour le placement si vous venez avec un autre groupe)</label></div>
+      <div class="row"><input id="{{ form.extra_comment.id }}" name="{{ form.extra_comment.name }}" type="text" value="{{ form.extra_comment.value }}"></div>
+      <div class="row"><label for="{{ form.places.id }}">Nombre de places</label> <input id="{{ form.places.id }}" max="50" min="1" name="{{ form.places.name }}" type="number" value="{{ form.places.value }}"></div>
       <div style="border: 1px solid black;">
-        <div>{{ choice.0 }} ({{ choice.0.price_in_cents|cents_to_euros }})</div>
-        <div style="border: 1px solid green;">
-          {% for item_id, item in choice.1.starter.items %}
-          <div {% if item.error %}style="background: red;" {% endif %}>
-            <label for="{{ item_id }}">{{ item.item }}</label>
-            <input id="{{ item_id }}" name="{{ item_id }}" value="{{ item.count }}" type="number" min="0">
+        <div style="border: 1px dashed blue;">
+          {% for inpt in form.single_items.dt0starter %}
+          <div {% if inpt.errors %}style="background: red;" {% endif %}>
+            <label for="{{ inpt.id }}">{{ inpt.item }}</label>
+            <input id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="number" min="0">
           </div>
           {% endfor %}
         </div>
-        <div style="border: 1px solid green;">
-          {% for item_id, item in choice.1.main.items %}
-          <div {% if item.error %}style="background: red;" {% endif %}>
-            <label for="{{ item_id }}">{{ item.item }}</label>
-            <input id="{{ item_id }}" name="{{ item_id }}" value="{{ item.count }}" type="number" min="0">
+        <div style="border: 1px dashed blue;">
+          {% for inpt in form.single_items.dt1main %}
+          <div {% if inpt.errors %}style="background: red;" {% endif %}>
+            <label for="{{ inpt.id }}">{{ inpt.item }}</label>
+            <input id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="number" min="0">
           </div>
           {% endfor %}
         </div>
-        <div style="border: 1px solid green;">
-          {% for item_id, item in choice.1.dessert.items %}
-          <div {% if item.error %}style="background: red;" {% endif %}>
-            <label for="{{ item_id }}">{{ item.item }}</label>
-            <input id="{{ item_id }}" name="{{ item_id }}" value="{{ item.count }}" type="number" min="0">
+        <div style="border: 1px dashed blue;">
+          {% for inpt in form.single_items.dt2dessert %}
+          <div {% if inpt.errors %}style="background: red;" {% endif %}>
+            <label for="{{ inpt.id }}">{{ inpt.item }}</label>
+            <input id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="number" min="0">
           </div>
           {% endfor %}
         </div>
+      </div>
+      {% for pack in form.packs %}
+      <div style="border: solid {% if pack.errors %}2px red{% else %}1px black{% endif %};">
+        <div>{{ pack.choice }} ({{ pack.choice.price_in_cents|cents_to_euros }})</div>
+        <div style="border: 1px solid green;">
+          {% for inpt in pack.items.dt0starter %}
+          <div {% if inpt.errors %}style="background: red;" {% endif %}>
+            <label for="{{ inpt.id }}">{{ inpt.item }}</label>
+            <input id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="number" min="0">
+          </div>
+          {% endfor %}
+          {% for inpt in pack.items.dt1main %}
+          <div {% if inpt.errors %}style="background: red;" {% endif %}>
+            <label for="{{ inpt.id }}">{{ inpt.item }}</label>
+            <input id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="number" min="0">
+          </div>
+          {% endfor %}
+          {% for inpt in pack.items.dt2dessert %}
+          <div {% if inpt.errors %}style="background: red;" {% endif %}>
+            <label for="{{ inpt.id }}">{{ inpt.item }}</label>
+            <input id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="number" min="0">
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+      {% for err in form.errors %}
+      <div style="background: red;">
+        {{ err }}
       </div>
       {% endfor %}
       <input type="submit" value="OK">
