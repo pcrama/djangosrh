@@ -13,3 +13,28 @@
 #+begin_src shell :exports code
   (cd djangosrh ; python manage.py test)
 #+end_src
+
+* Alwaysdata setup
+** Environment variables
+#+begin_example
+  POSTGRESQL_PASSWORD=...
+  DJANGO_SECRET_KEY=...
+  DJANGO_ALLOWED_HOSTS=*
+#+end_example
+
+** Static paths
+#+begin_example
+  /static=static
+#+end_example
+
+** Deployment actions
+#+begin_src shell :exports code
+  destdir="$HOME/www/django1"
+  [ -d "$destdir" ] || git clone git@github.com:pcrama/djangosrh.git "$destdir"
+  [ -d "$destdir/env" ] \
+      || ( cd "$destdir" && python -m venv env && "$destdir/env/bin/pip install django")
+  cd "$destdir/djangosrh/"
+  source "$destdir/env/bin/activate"
+  python manage.py collectstatic --noinput
+  # Only once, doesn't need database password?: python manage.py createsuperuser
+#+end_src
