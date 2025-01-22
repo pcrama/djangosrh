@@ -7,6 +7,7 @@ from enum import Enum
 class Civility(models.TextChoices):
     man = "Mr"
     woman = "Mme"
+    miss = "Mlle"
     __empty__ = ""
 
 
@@ -19,6 +20,7 @@ class DishType(models.TextChoices):
 class Event(models.Model):
     name = models.CharField(max_length=200)
     date = models.DateField()
+    contact_email = models.CharField(max_length=200)
 
     def __str__(self):
         return f"{self.name}@{self.date}"
@@ -61,9 +63,9 @@ class ReservationItemCount(models.Model):
 
 
 class Reservation(models.Model):
-    civility = models.CharField(max_length=20, choices=Civility)
+    civility = models.CharField(max_length=20, choices=Civility, default=Civility.__empty__)
     last_name = models.CharField(max_length=200)
-    first_name = models.CharField(max_length=200)
+    first_name = models.CharField(max_length=200, default="")
     email = models.CharField(max_length=200)
     accepts_rgpd_reuse = models.BooleanField()
     total_due_in_cents = models.IntegerField()

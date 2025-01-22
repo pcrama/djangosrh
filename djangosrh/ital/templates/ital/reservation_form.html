@@ -1,75 +1,134 @@
+{% extends "ital/base_template.html" %}
 {% load currency_filter %}
-
-<html>
-  <head>
-    <title>{{ form.event.name }}</title>
-  </head>
-  <body>
-    <form action="{% url 'reservation_form' form.event.id %}" method="post">
-      {% csrf_token %}
-      <div class="row"><label for="{{ form.first_name.id }}">Prénom</label> <input id="{{ form.first_name.id }}" name="{{ form.first_name.name }}" type="text" value="{{ form.first_name.value }}"></div>
-      <div class="row"><label for="{{ form.last_name.id }}">Nom</label> <input id="{{ form.last_name.id }}" name="{{ form.last_name.name }}" required="required" type="text" value="{{ form.last_name.value }}"></div>
-      <div class="row"><label for="{{ form.email.id }}">E-mail</label> <input id="{{ form.email.id }}" name="{{ form.email.name }}" required="required" type="email" value="{{ form.email.value }}"></div>
-      <div class="row"><label for="{{ form.extra_comment.id }}">Commentaire (p.ex. pour le placement si vous venez avec un autre groupe)</label></div>
-      <div class="row"><input id="{{ form.extra_comment.id }}" name="{{ form.extra_comment.name }}" type="text" value="{{ form.extra_comment.value }}"></div>
-      <div class="row"><label for="{{ form.places.id }}">Nombre de places</label> <input id="{{ form.places.id }}" max="50" min="1" name="{{ form.places.name }}" type="number" value="{{ form.places.value }}"></div>
-      <div style="border: 1px solid black;">
-        <div style="border: 1px dashed blue;">
+{% block title %}{{ form.event.name }}{% endblock %}
+{% block content %}
+<form{% if form.was_validated %}class="was-validated"{% endif %} action="{% url 'reservation_form' form.event.id %}" method="post">
+  {% csrf_token %}
+  <div class="row" style="display: flex;">
+    <div class="col-sm-1">
+      <select class="form-control" id="{{ form.civility.id }}" name="{{ form.civility.name }}">
+        <option value="" selected="selected">???</option>
+        <option value="Mlle">Mlle</option>
+        <option value="Mme">Mme</option>
+        <option value="Mr">Mr</option>
+      </select>
+    </div>
+    <div class="col-sm-4">
+      <input class="form-control {% if form.was_validated %}{% if form.first_name.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %}" id="{{ form.first_name.id }}" name="{{ form.first_name.name }}" type="text" value="{{ form.first_name.value }}" placeholder="Prénom">
+    </div>
+    <div class="col-sm-7">
+      <input class="form-control {% if form.was_validated %}{% if form.last_name.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %}" id="{{ form.last_name.id }}" name="{{ form.last_name.name }}" required="required" type="text" value="{{ form.last_name.value }}" placeholder="Nom de famille">{% if form.last_name.errors %}{% for err in form.last_name.errors %}<span class="invalid-feedback">{{ err }}</span>{% endfor %}{% endif %}
+    </div>
+  </div>
+  <div class="form-group row">
+    <label class="col-sm-2 col-form-label" for="{{ form.email.id }}">E-mail</label>
+    <div class="col-sm-10">
+      <input class="form-control {% if form.was_validated %}{% if form.email.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %}" id="{{ form.email.id }}" name="{{ form.email.name }}" required="required" type="email" value="{{ form.email.value }}">
+    </div>
+  </div>
+  <div class="form-check">
+    <small class="form-text text-muted">La Société Royale d&#8217;Harmonie de Braine-l&#8217;Alleud respecte votre vie privée. Les données de contact que vous nous communiquez dans ce formulaire seront uniquement utilisées dans le cadre de ce {{ form.event.name }}, à moins que vous nous donniez l&#8217;autorisation de les garder pour vous informer de nos concerts et autres fêtes dans le futur. Contactez <a href="mailto:{{ form.event.contact_email }}">{{ form.event.contact_email }}</a> pour demander d&#8217;être retiré de nos fichiers.</small><br>
+    <input id="{{ form.accepts_rgpd_reuse.id }}" name="{{ form.accepts_rgpd_reuse.name }}" type="checkbox" value=""> <label for="{{ form.accepts_rgpd_reuse.id }}">Je désire être tenu au courant des activités futures de la SRH de Braine-l&#8217;Alleud et l&#8217;autorise à conserver mon nom et mon adresse email à cette fin.</label></div>
+  <div class="form-group row">
+    <label for="{{ form.extra_comment.id }}">Commentaire (p.ex. pour le placement si vous venez avec un autre groupe)</label><br>
+    <input class="form-control {% if form.was_validated %}{% if form.extra_comment.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %}" id="{{ form.extra_comment.id }}" name="{{ form.extra_comment.name }}" type="text" value="{{ form.extra_comment.value }}">
+  </div>
+  <div class="form-group row">
+    <label class="col-sm-2 col-form-label" for="{{ form.places.id }}">Nombre de places</label>
+    <div class="col-sm-2">
+      <input class="form-control {% if form.was_validated %}{% if form.places.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %}" id="{{ form.places.id }}" max="50" min="1" name="{{ form.places.name }}" type="number" value="{{ form.places.value }}">
+    </div>
+  </div>
+  <div class="container border">
+    <div class="row"><p class="text-center"><b>À la carte</b></p></div>
+    <div class="row">
+      <div class="col-sm-4 border-right">
+        <div class="container border-right">
           {% for inpt in form.single_items.dt0starter %}
-          <div {% if inpt.errors %}style="background: red;" {% endif %}>
-            <label for="{{ inpt.id }}">{{ inpt.item }}</label>
-            <input id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="number" min="0">
+          <div class="form-group row">
+            <label class="col-sm-9 col-form-label" for="{{ inpt.id }}">{{ inpt.item }}</label>
+            <div class="col-sm-3">
+              <input class="{% if form.was_validated %}{% if inpt.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %} form-control" id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="number" min="0">
+            </div>
           </div>
           {% endfor %}
         </div>
-        <div style="border: 1px dashed blue;">
+      </div>
+      <div class="col-sm-4 border-right">
+        <div class="container border-right">
           {% for inpt in form.single_items.dt1main %}
-          <div {% if inpt.errors %}style="background: red;" {% endif %}>
-            <label for="{{ inpt.id }}">{{ inpt.item }}</label>
-            <input id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="number" min="0">
+          <div class="form-group row">
+            <label class="col-sm-9 col-form-label" for="{{ inpt.id }}">{{ inpt.item }}</label>
+            <div class="col-sm-3">
+              <input class="{% if form.was_validated %}{% if inpt.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %} form-control" id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="number" min="0">
+            </div>
           </div>
           {% endfor %}
         </div>
-        <div style="border: 1px dashed blue;">
+      </div>
+      <div class="col-sm-4">
+        <div class="container border-right">
           {% for inpt in form.single_items.dt2dessert %}
-          <div {% if inpt.errors %}style="background: red;" {% endif %}>
-            <label for="{{ inpt.id }}">{{ inpt.item }}</label>
-            <input id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="number" min="0">
+          <div class="form-group row">
+            <label class="col-sm-9 col-form-label" for="{{ inpt.id }}">{{ inpt.item }}</label>
+            <div class="col-sm-3">
+              <input class="{% if form.was_validated %}{% if inpt.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %} form-control" id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="number" min="0">
+            </div>
           </div>
           {% endfor %}
         </div>
       </div>
-      {% for pack in form.packs %}
-      <div style="border: solid {% if pack.errors %}2px red{% else %}1px black{% endif %};">
-        <div>{{ pack.choice }} ({{ pack.choice.price_in_cents|cents_to_euros }})</div>
-        <div style="border: 1px solid green;">
+    </div>
+  </div>
+  {% for pack in form.packs %}
+  <div class="container border">
+    <div class="row"><span class="font-weight-bold text-center"><b>{{ pack.choice }}</b> ({{ pack.choice.price_in_cents|cents_to_euros }})</span></div>
+    {% if pack.errors %}<div class="row invalid-feedback">{% for err in pack.errors %}<div>{{ err }}</div>{% endfor %}</div>{% endif %}
+    <div class="row">
+      <div class="col-sm-4">
+        <div class="container">
           {% for inpt in pack.items.dt0starter %}
-          <div {% if inpt.errors %}style="background: red;" {% endif %}>
-            <label for="{{ inpt.id }}">{{ inpt.item }}</label>
-            <input id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="number" min="0">
-          </div>
-          {% endfor %}
-          {% for inpt in pack.items.dt1main %}
-          <div {% if inpt.errors %}style="background: red;" {% endif %}>
-            <label for="{{ inpt.id }}">{{ inpt.item }}</label>
-            <input id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="number" min="0">
-          </div>
-          {% endfor %}
-          {% for inpt in pack.items.dt2dessert %}
-          <div {% if inpt.errors %}style="background: red;" {% endif %}>
-            <label for="{{ inpt.id }}">{{ inpt.item }}</label>
-            <input id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="number" min="0">
+          <div class="form-group row">
+            <label class="col-sm-9 col-form-label" for="{{ inpt.id }}">{{ inpt.item }}</label>
+            <div class="col-sm-3">
+              <input class="{% if form.was_validated %}{% if inpt.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %} form-control" id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="number" min="0">
+            </div>
           </div>
           {% endfor %}
         </div>
       </div>
-      {% endfor %}
-      {% for err in form.errors %}
-      <div style="background: red;">
-        {{ err }}
+      <div class="col-sm-4">
+        <div class="container">
+          {% for inpt in pack.items.dt1main %}
+          <div class="form-group row">
+            <label class="col-sm-7 col-form-label" for="{{ inpt.id }}">{{ inpt.item }}</label>
+            <div class="col-sm-5">
+              <input class="{% if form.was_validated %}{% if inpt.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %} form-control" id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="number" min="0">
+            </div>
+          </div>
+          {% endfor %}
+        </div>
       </div>
-      {% endfor %}
-      <input type="submit" value="OK">
-    </form>
-  <body>
-</html>
+      <div class="col-sm-4">
+        <div class="container">
+          {% for inpt in pack.items.dt2dessert %}
+          <div class="form-group row">
+            <label class="col-sm-8 col-form-label" for="{{ inpt.id }}">{{ inpt.item }}</label>
+            <div class="col-sm-4">
+              <input class="{% if form.was_validated %}{% if inpt.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %} form-control" id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="number" min="0">
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+  {% for err in form.errors %}
+  <div class="invalid-feedback">
+    {{ err }}
+  </div>
+  {% endfor %}
+  <input type="submit" value="OK">
+</form>
+{% endblock %}

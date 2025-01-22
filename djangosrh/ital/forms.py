@@ -18,7 +18,7 @@ class ReservationForm:
 
     def __init__(self, evt: Event, data=None):
         self.event = evt
-        self.data = defaultdict(int) if data is None else data
+        self.was_validated, self.data = (False, defaultdict(int)) if data is None else (True, data)
         self.single_items = defaultdict(list)
         self.packs = []
         self.clean_data()
@@ -44,7 +44,7 @@ class ReservationForm:
     def clean_data(self):
         def _make_input(id: str, default: Any, errors: Callable[[str], list[str]]) -> ReservationForm.Input:
             return self.Input(
-                id=id, name=id, value=self.data.get(id, default), errors=errors(id), choice=None, item=None)
+                id=id, name=id, value=self.data.get(id, default), errors=errors(id) if self.was_validated else [], choice=None, item=None)
         def _mandatory(id: str) -> list[str]:
             return [] if id in self.data else ["Mandatory field"]
         def _non_blank(id: str) -> list[str]:
@@ -69,9 +69,9 @@ class ReservationForm:
                     return [f"Must be between {low} and {high}"]
                 return [] if low <= vv <= high else [f"Must be between {low} and {high}"]
             return work
-        self.civility = _make_input("civility", "", _in_set([Civility.man, Civility.woman, Civility.__empty__]))
+        self.civility = _make_input("civility", Reservation.civility.field.default, _in_set([Civility.man, Civility.woman, Civility.__empty__]))
         self.last_name = _make_input("last_name", "", _non_blank)
-        self.first_name = _make_input("first_name", "", _any)
+        self.first_name = _make_input("first_name", Reservation.first_name.field.default, _any)
         self.email = _make_input("email", "", _mandatory_email)
         self.accepts_rgpd_reuse = _make_input("accepts_rgpd_reuse", "", _any)
         self.places = _make_input("places", 1, _mandatory_in_range(1, 50))
@@ -87,9 +87,8 @@ class ReservationForm:
             sums: defaultdict[str, int] = defaultdict(int)
             errors = []
             item: Item
-            for item in choice.item_set.all():
+            for idx, item in enumerate(choice.item_set.all()):
                 key = f"counter{idx}_ch_{choice.id}_it_{item.id}"
-                idx += 1
                 try:
                     val = int(self.data[key])
                 except ValueError:
@@ -104,7 +103,7 @@ class ReservationForm:
                         errors.append("Too large")
                 all_dishes.add(item.dish)
                 vals[item.dish].append(self.Input(
-                    id=key, name=key, value=val, errors=errors, choice=choice, item=item))
+                    id=key, name=key, value=val, errors=errors if self.was_validated else [], choice=choice, item=item))
                 sums[item.dish] += val
                 idx += 1
             if sum(len(items) for items in vals.values()) == 1:
@@ -123,6 +122,8 @@ class ReservationForm:
                     errors=["Sum mismatch"] if sums_array and any(sums_array[0] != x for x in sums_array) else [],
                 ))
         self.total_due_in_cents = total_due_in_cents
+        self.all_dishes = list(all_dishes)
+        self.all_dishes.sort()
 
     def save(self) -> Reservation | None:
         if self.is_valid():

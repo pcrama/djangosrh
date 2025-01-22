@@ -84,7 +84,10 @@ class IntegrationTestCases(TestCase):
             tomate_mozza.name: "1",
             croquettes.name: "2",
             bolo.name: "3",
-            tiramisu.name: "3"
+            tiramisu.name: "3",
+            "last_name": "Last Name (valid 3 bolo)",
+            "places": "3",
+            "email": "valid@three.bolo.com",
         })
         
         pack = self.get_pack(reservation, "<c>Bolo menu<c>")
@@ -126,6 +129,9 @@ class IntegrationTestCases(TestCase):
             glace.name: "1",
             a_la_carte_croquettes.name: "1",
             a_la_carte_tiramisu.name: "2",
+            "last_name": "Last Name (valid 3 anything)",
+            "places": "3",
+            "email": "valid@three.anything.com",
         })
         
         pack = self.get_pack(reservation, "<c>Anything goes menu<c>")
