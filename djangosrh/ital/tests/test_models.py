@@ -14,7 +14,11 @@ from ..models import (
 
 
 def fill_db() -> tuple[Event, list[Item], list[tuple[Choice, list[Item]]], list[Reservation]]:
-    event = Event(name="Souper Italien", date=datetime(2025, 3, 29, 1, 0, 0, tzinfo=timezone.utc))
+    event = Event(
+        name="Souper Italien",
+        date=datetime(2025, 3, 29, 1, 0, 0, tzinfo=timezone.utc),
+        contact_email="dont-spam@me.com",
+        max_seats=120)
     event.save()
     items = [Item(display_text=f"<>{name}<>", column_header=name, short_text=name, dish=dish)
              for name, dish in (("Tomate Mozza", DishType.DT0STARTER),

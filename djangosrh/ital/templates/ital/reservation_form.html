@@ -1,12 +1,98 @@
 {% extends "ital/base_template.html" %}
 {% load currency_filter %}
 {% block title %}{{ form.event.name }}{% endblock %}
+{% block style %}
+input[type="number"].form-control { padding-left: 0; padding-right 0; }
+input[type="number"].col-form-control { padding-left: 0; padding-right 0; }
+form#reservation_form_id div.error-message { display: none; }
+form#reservation_form_id div.has-error div.error-message { display: inline; }
+{% endblock %}
 {% block content %}
-<form{% if form.was_validated %}class="was-validated"{% endif %} action="{% url 'reservation_form' form.event.id %}" method="post">
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+      const errorClass = 'has-error';
+      const form = document.querySelector('#reservation_form_id');
+      const validations = [
+          {% for pck in form.packs %}
+          {'reference_fields': [{% for itm in pck.items.dt1main %} '{{ itm.id }}',{% endfor %}],
+           'validations': [
+               {% if pck.items.dt0starter %}
+               {'section': '{{ pck.id }}_dt0starter',
+                'validated_fields': [{% for itm in pck.items.dt0starter %} '{{ itm.id }}',{% endfor %}]},
+               {% endif %}
+               {% if pck.items.dt2dessert %}
+               {'section': '{{ pck.id }}_dt2dessert',
+                'validated_fields': [{% for itm in pck.items.dt2dessert %} '{{ itm.id }}',{% endfor %}]},
+               {% endif %}
+           ],
+          },
+          {% endfor %}
+      ];
+      function sumOfInputFields(inputFieldIds) {
+          return inputFieldIds.reduce((sum, fieldId) => sum + parseInt(document.getElementById(fieldId).value),
+                                      0);
+      }
+      function runValidation(validation_suite) {
+          const referenceSum = sumOfInputFields(validation_suite.reference_fields);
+          validation_suite.validations.forEach(function(validation) {
+              const section = document.getElementById(validation.section);
+              const inputSum = sumOfInputFields(validation.validated_fields);
+              section.classList.toggle(errorClass, inputSum != referenceSum);
+          });
+      }
+      function validateAll() {
+          validations.forEach(runValidation);
+      }
+      form.addEventListener('submit', function (event) {
+          // Reset error classes
+          resetErrorClasses();
+          validateAll();
+          // Prevent form submission if there are errors
+          if (form.querySelectorAll('.' + errorClass).length > 0) {
+              event.preventDefault();
+          }
+      });
+      function updatePrice() {
+          const prices = {
+              {% for dish_inputs in form.single_items.values %}
+                  {% for inpt in dish_inputs %}
+                  '{{ inpt.id }}': {{ inpt.choice.price_in_cents }},
+                  {% endfor %}
+              {% endfor %}
+              {% for pck in form.packs %}
+                  {% for inpt in pck.items.dt1main %}
+                  '{{ inpt.id }}': {{ pck.choice.price_in_cents }},
+                  {% endfor %}
+              {% endfor %}
+          };
+          let totalPrice = 0;
+          for (let key in prices) {
+              totalPrice += parseInt(document.getElementById(key).value) * prices[key];
+          }
+          const cents = String(totalPrice % 100).padStart(2, '0');
+          const confirm_or_fix = (form.querySelectorAll('.' + errorClass).length > 0)?'Vérifiez votre commande':'Confirmer';
+          document.getElementById('reservation-submit').value = totalPrice == 0?confirm_or_fix:`${confirm_or_fix}. Prix total: ${totalPrice / 100}.${cents}€`
+      }
+      form.addEventListener('change', function (event) {
+          validateAll();
+          updatePrice();
+      });
+      function resetErrorClasses() {
+          var errorSections = form.querySelectorAll('.' + errorClass);
+          errorSections.forEach(function (section) {
+              section.classList.remove(errorClass);
+          });
+      }
+      resetErrorClasses();
+      validateAll();
+      updatePrice();
+  });
+</script>
+<form id="reservation_form_id" action="{% url 'reservation_form' form.event.id %}" method="post">
   {% csrf_token %}
   <div class="row" style="display: flex;">
     <div class="col-sm-1">
-      <select class="form-control" id="{{ form.civility.id }}" name="{{ form.civility.name }}">
+      <select class="form-control {% if form.was_validated %}{% if form.first_name.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %}" id="{{ form.civility.id }}" name="{{ form.civility.name }}">
         <option value="" selected="selected">???</option>
         <option value="Mlle">Mlle</option>
         <option value="Mme">Mme</option>
@@ -26,9 +112,13 @@
       <input class="form-control {% if form.was_validated %}{% if form.email.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %}" id="{{ form.email.id }}" name="{{ form.email.name }}" required="required" type="email" value="{{ form.email.value }}">
     </div>
   </div>
-  <div class="form-check">
-    <small class="form-text text-muted">La Société Royale d&#8217;Harmonie de Braine-l&#8217;Alleud respecte votre vie privée. Les données de contact que vous nous communiquez dans ce formulaire seront uniquement utilisées dans le cadre de ce {{ form.event.name }}, à moins que vous nous donniez l&#8217;autorisation de les garder pour vous informer de nos concerts et autres fêtes dans le futur. Contactez <a href="mailto:{{ form.event.contact_email }}">{{ form.event.contact_email }}</a> pour demander d&#8217;être retiré de nos fichiers.</small><br>
-    <input id="{{ form.accepts_rgpd_reuse.id }}" name="{{ form.accepts_rgpd_reuse.name }}" type="checkbox" value=""> <label for="{{ form.accepts_rgpd_reuse.id }}">Je désire être tenu au courant des activités futures de la SRH de Braine-l&#8217;Alleud et l&#8217;autorise à conserver mon nom et mon adresse email à cette fin.</label></div>
+  <div class="form-group">
+    <small class="form-text text-muted">La Société Royale d&#8217;Harmonie de Braine-l&#8217;Alleud respecte votre vie privée. Les données de contact que vous nous communiquez dans ce formulaire seront uniquement utilisées dans le cadre de ce {{ form.event.name }}, à moins que vous nous donniez l&#8217;autorisation de les garder pour vous informer de nos concerts et autres fêtes dans le futur. Contactez <a href="mailto:{{ form.event.contact_email }}">{{ form.event.contact_email }}</a> pour demander d&#8217;être retiré de nos fichiers.</small>
+    <div class="form-check">
+      <input class="form-check-input" id="{{ form.accepts_rgpd_reuse.id }}" name="{{ form.accepts_rgpd_reuse.name }}" type="checkbox" value="">
+      <label for="{{ form.accepts_rgpd_reuse.id }}">Je désire être tenu au courant des activités futures de la SRH de Braine-l&#8217;Alleud et l&#8217;autorise à conserver mon nom et mon adresse email à cette fin.</label>
+    </div>
+  </div>
   <div class="form-group row">
     <label for="{{ form.extra_comment.id }}">Commentaire (p.ex. pour le placement si vous venez avec un autre groupe)</label><br>
     <input class="form-control {% if form.was_validated %}{% if form.extra_comment.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %}" id="{{ form.extra_comment.id }}" name="{{ form.extra_comment.name }}" type="text" value="{{ form.extra_comment.value }}">
@@ -36,91 +126,52 @@
   <div class="form-group row">
     <label class="col-sm-2 col-form-label" for="{{ form.places.id }}">Nombre de places</label>
     <div class="col-sm-2">
-      <input class="form-control {% if form.was_validated %}{% if form.places.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %}" id="{{ form.places.id }}" max="50" min="1" name="{{ form.places.name }}" type="number" value="{{ form.places.value }}">
+      <input class="form-control {% if form.was_validated %}{% if form.places.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %}" id="{{ form.places.id }}" max="50" min="1" name="{{ form.places.name }}" type="text" inputmode="numeric" pattern="\d\d?" value="{{ form.places.value }}">
     </div>
   </div>
-  <div class="container border">
-    <div class="row"><p class="text-center"><b>À la carte</b></p></div>
+  <div class="container">
+    <div class="row"><p class="text-primary text-center"><b>À la carte</b></p></div>
     <div class="row">
+      {% for dish_type in form.all_dishes %}
       <div class="col-sm-4 border-right">
         <div class="container border-right">
-          {% for inpt in form.single_items.dt0starter %}
-          <div class="form-group row">
-            <label class="col-sm-9 col-form-label" for="{{ inpt.id }}">{{ inpt.item }}</label>
-            <div class="col-sm-3">
-              <input class="{% if form.was_validated %}{% if inpt.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %} form-control" id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="number" min="0">
+          {% for key, input_fields in form.single_items.items %}{% if key == dish_type %}{% for inpt in input_fields %}
+          <div class="form-group row no-gutters">
+            <div style="width: calc(100% - {% if form.was_validated %}4em{% else %}3em{% endif %} - 0.3em)">
+              {% if inpt.errors %}<details class="text-white bg-danger"><summary>{% endif %}<label class="form-label" for="{{ inpt.id }}">{{ inpt.item }} {{ inpt.choice.price_in_cents|cents_to_euros }}</label>{% if inpt.errors %}</summary>{% for err in inpt.errors %}{% if not forloop.first %}<br>{% endif %}{{ err }}{% endfor %}</details>{% endif %}
+            </div>
+            <div style="width: {% if form.was_validated %}4em{% else %}3em{% endif %};">
+              <input class="{% if form.was_validated %}{% if inpt.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %} form-control" style="width: {% if form.was_validated %}4em{% else %}3em{% endif %}; padding-left: 0.1em; padding-right: 0.1em" id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="text" inputmode="numeric" pattern="\d\d?">
             </div>
           </div>
-          {% endfor %}
+          {% endfor %}{% endif %}{% endfor %}
         </div>
       </div>
-      <div class="col-sm-4 border-right">
-        <div class="container border-right">
-          {% for inpt in form.single_items.dt1main %}
-          <div class="form-group row">
-            <label class="col-sm-9 col-form-label" for="{{ inpt.id }}">{{ inpt.item }}</label>
-            <div class="col-sm-3">
-              <input class="{% if form.was_validated %}{% if inpt.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %} form-control" id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="number" min="0">
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-      <div class="col-sm-4">
-        <div class="container border-right">
-          {% for inpt in form.single_items.dt2dessert %}
-          <div class="form-group row">
-            <label class="col-sm-9 col-form-label" for="{{ inpt.id }}">{{ inpt.item }}</label>
-            <div class="col-sm-3">
-              <input class="{% if form.was_validated %}{% if inpt.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %} form-control" id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="number" min="0">
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
+      {% endfor %}
     </div>
   </div>
   {% for pack in form.packs %}
-  <div class="container border">
-    <div class="row"><span class="font-weight-bold text-center"><b>{{ pack.choice }}</b> ({{ pack.choice.price_in_cents|cents_to_euros }})</span></div>
-    {% if pack.errors %}<div class="row invalid-feedback">{% for err in pack.errors %}<div>{{ err }}</div>{% endfor %}</div>{% endif %}
-    <div class="row">
-      <div class="col-sm-4">
+  <div class="container">
+    <div class="row"><span class="font-weight-bold text-primary text-center"><b>{{ pack.choice }}</b> {{ pack.choice.price_in_cents|cents_to_euros }}</span></div>
+    {% if pack.errors %}<div class="row">{% for err in pack.errors %}<div class="form-text text-center bg-danger text-white">{{ err }}</div>{% endfor %}</div>{% endif %}
+    <div class="row no-gutters">
+      {% for dish_type in form.all_dishes %}
+      <div class="col-sm-4" id="{{ pack.id }}_{{ dish_type }}">
         <div class="container">
-          {% for inpt in pack.items.dt0starter %}
-          <div class="form-group row">
-            <label class="col-sm-9 col-form-label" for="{{ inpt.id }}">{{ inpt.item }}</label>
-            <div class="col-sm-3">
-              <input class="{% if form.was_validated %}{% if inpt.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %} form-control" id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="number" min="0">
+          <div class="row error-message invalid-feedback">La somme de cette colonne doit correspondre au nombre total de plats.</div>
+          {% for key, input_fields in pack.items.items %}{% if key == dish_type %}{% for inpt in input_fields %}
+          <div class="form-group row no-gutters">
+            <div style="display: flex; width: calc(100% - {% if form.was_validated %}4em{% else %}3em{% endif %} - 0.3em)">
+              {% if inpt.errors %}<details class="bg-danger text-white"><summary>{% endif %}<label class="form-label" for="{{ inpt.id }}">{{ inpt.item }}</label>{% if inpt.errors %}</summary>{% for err in inpt.errors %}{% if not forloop.first %}<br>{% endif %}{{ err }}{% endfor %}</details>{% endif %}
+            </div>
+            <div style="width: {% if form.was_validated %}4em{% else %}3em{% endif %};">
+              <input class="padding-x-0 {% if form.was_validated %}{% if inpt.errors or pack.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %} form-control" style="width: {% if form.was_validated %}4em{% else %}3em{% endif %}; padding-left: 0.1em; padding-right: 0.1em;" id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="text" inputmode="numeric" pattern="\d\d?">
             </div>
           </div>
-          {% endfor %}
+          {% endfor %}{% endif %}{% endfor %}
         </div>
       </div>
-      <div class="col-sm-4">
-        <div class="container">
-          {% for inpt in pack.items.dt1main %}
-          <div class="form-group row">
-            <label class="col-sm-7 col-form-label" for="{{ inpt.id }}">{{ inpt.item }}</label>
-            <div class="col-sm-5">
-              <input class="{% if form.was_validated %}{% if inpt.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %} form-control" id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="number" min="0">
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-      <div class="col-sm-4">
-        <div class="container">
-          {% for inpt in pack.items.dt2dessert %}
-          <div class="form-group row">
-            <label class="col-sm-8 col-form-label" for="{{ inpt.id }}">{{ inpt.item }}</label>
-            <div class="col-sm-4">
-              <input class="{% if form.was_validated %}{% if inpt.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %} form-control" id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="number" min="0">
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
+      {% endfor %}
     </div>
   </div>
   {% endfor %}
@@ -129,6 +180,6 @@
     {{ err }}
   </div>
   {% endfor %}
-  <input type="submit" value="OK">
+  <div class="container"><div class="row"><input class="form-control" type="submit" value="OK" id="reservation-submit"></div></div>
 </form>
 {% endblock %}

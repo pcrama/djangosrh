@@ -1,5 +1,7 @@
 from collections import defaultdict, namedtuple
+import functools
 import itertools
+import operator
 import re
 from typing import Any, Callable, Sequence
 
@@ -8,6 +10,7 @@ from .models import Civility, Event, Item, Reservation, ReservationItemCount
 class ReservationForm:
     Input = namedtuple("Input", ("id", "name", "value", "errors", "choice", "item"))
     Pack = namedtuple("Pack", (
+        "id",
         "choice",
         "items",  # dict[str, list[Input]]
         "errors", # list[str]
@@ -42,9 +45,18 @@ class ReservationForm:
         return True
 
     def clean_data(self):
-        def _make_input(id: str, default: Any, errors: Callable[[str], list[str]]) -> ReservationForm.Input:
+        def _make_input(id: str, default: Any, errors: Callable[[str], list[str]], parse: Callable[[Any], Any]|None=None) -> ReservationForm.Input:
+            sentinel = object()
+            val: Any
+            if (val_str := self.data.get(id, sentinel)) is sentinel:
+                val = default
+            else:
+                try:
+                    val = val_str if parse is None else parse(val_str)
+                except Exception:
+                    val = val_str
             return self.Input(
-                id=id, name=id, value=self.data.get(id, default), errors=errors(id) if self.was_validated else [], choice=None, item=None)
+                id=id, name=id, value=val, errors=errors(id) if self.was_validated else [], choice=None, item=None)
         def _mandatory(id: str) -> list[str]:
             return [] if id in self.data else ["Mandatory field"]
         def _non_blank(id: str) -> list[str]:
@@ -73,8 +85,8 @@ class ReservationForm:
         self.last_name = _make_input("last_name", "", _non_blank)
         self.first_name = _make_input("first_name", Reservation.first_name.field.default, _any)
         self.email = _make_input("email", "", _mandatory_email)
-        self.accepts_rgpd_reuse = _make_input("accepts_rgpd_reuse", "", _any)
-        self.places = _make_input("places", 1, _mandatory_in_range(1, 50))
+        self.accepts_rgpd_reuse = _make_input("accepts_rgpd_reuse", False, _any, functools.partial(operator.eq, "yes"))
+        self.places = _make_input("places", 1, _mandatory_in_range(1, 50), int)
         self.extra_comment = _make_input("extra_comment", "", _any)
         self.validate_sum_groups()
 
@@ -85,9 +97,9 @@ class ReservationForm:
         for choice in self.event.choice_set.all():
             vals: defaultdict[str, list[ReservationForm.Input]] = defaultdict(list)
             sums: defaultdict[str, int] = defaultdict(int)
-            errors = []
             item: Item
             for idx, item in enumerate(choice.item_set.all()):
+                errors: list[str] = []
                 key = f"counter{idx}_ch_{choice.id}_it_{item.id}"
                 try:
                     val = int(self.data[key])
@@ -105,7 +117,6 @@ class ReservationForm:
                 vals[item.dish].append(self.Input(
                     id=key, name=key, value=val, errors=errors if self.was_validated else [], choice=choice, item=item))
                 sums[item.dish] += val
-                idx += 1
             if sum(len(items) for items in vals.values()) == 1:
                 input_ = next(iter(vals.values()))[0]
                 total_due_in_cents += choice.price_in_cents * input_.value
@@ -117,12 +128,14 @@ class ReservationForm:
                         sums_array.append(sums[dish])
                 total_due_in_cents += choice.price_in_cents * sums_array[0]
                 self.packs.append(self.Pack(
+                    id=f"pack_id_{len(self.packs)}",
                     choice=choice,
-                    items=vals,
+                    items=dict(vals),  # django templating gets confused by defaultdict
                     errors=["Sum mismatch"] if sums_array and any(sums_array[0] != x for x in sums_array) else [],
                 ))
         self.total_due_in_cents = total_due_in_cents
         self.all_dishes = list(all_dishes)
+        self.single_items = dict(self.single_items) # django templating gets confused by defaultdict
         self.all_dishes.sort()
 
     def save(self) -> Reservation | None:
@@ -132,9 +145,10 @@ class ReservationForm:
                 first_name=self.first_name.value,
                 last_name=self.last_name.value,
                 email=self.email.value,
-                accepts_rgpd_reuse=False,
+                accepts_rgpd_reuse=self.accepts_rgpd_reuse.value,
                 total_due_in_cents=self.total_due_in_cents,
                 places=self.places.value,
+                extra_comment=self.extra_comment.value,
             )
             reservation.save()
             for inpt in itertools.chain(
