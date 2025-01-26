@@ -93,7 +93,7 @@ class ReservationForm:
     def validate_sum_groups(self):
         total_due_in_cents = 0
         idx = 0
-        all_dishes = set()
+        all_dishes: set[str] = set()
         for choice in self.event.choice_set.all():
             vals: defaultdict[str, list[ReservationForm.Input]] = defaultdict(list)
             sums: defaultdict[str, int] = defaultdict(int)
