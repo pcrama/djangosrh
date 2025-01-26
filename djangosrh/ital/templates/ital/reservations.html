@@ -1,20 +1,17 @@
+{% extends "ital/base_template.html" %}
 {% load currency_filter %}
-
-<html>
-  <head>
-    <title>{{ Reservation.objects.count }} Reservations list</title>
-  </head>
-  <body>
-    <table>
-      {% for reservation in reservations %}
-      <tr>
-        <td>
-          <a href="{% url 'show_reservation' reservation.uuid %}">{{ reservation }}</a>
-        </td>
-        <td>{{reservation.places}}</td>
-        <td>{{ reservation.total_due_in_cents|cents_to_euros }}</td>
-      </tr>
-      {% endfor %}
-    </table>
-  <body>
-</html>
+{% block title %}{{ event.name }}{% endblock %}
+{% block content %}
+Il y a {{ event.reservation_set.count|plural:"réservation" }}.
+<table>
+  {% for reservation in reservations %}
+  <tr>
+    <td>
+      <a href="{% url 'show_reservation' reservation.uuid %}">{{ reservation }}</a>
+    </td>
+    <td>{{reservation.places}}</td>
+    <td>{{ reservation.total_due_in_cents|cents_to_euros }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

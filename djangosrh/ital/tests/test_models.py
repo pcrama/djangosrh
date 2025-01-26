@@ -20,7 +20,7 @@ def fill_db() -> tuple[Event, list[Item], list[tuple[Choice, list[Item]]], list[
         contact_email="dont-spam@me.com",
         max_seats=120)
     event.save()
-    items = [Item(display_text=f"<>{name}<>", column_header=name, short_text=name, dish=dish)
+    items = [Item(display_text=f"<>{name}<>", column_header=name, short_text=name, display_text_plural=f"P({name})", dish=dish)
              for name, dish in (("Tomate Mozza", DishType.DT0STARTER),
                        ("Croquettes", DishType.DT0STARTER),
                        ("Bolo", DishType.DT1MAIN),
@@ -57,6 +57,8 @@ def fill_db() -> tuple[Event, list[Item], list[tuple[Choice, list[Item]]], list[
         accepts_rgpd_reuse=True,
         total_due_in_cents=7900,
         places=2,
+        event=event,
+        bank_id="0001",
     ))
     rsrvtn.save()
     for choice_idx, item_idx, count in (
@@ -73,6 +75,8 @@ def fill_db() -> tuple[Event, list[Item], list[tuple[Choice, list[Item]]], list[
         accepts_rgpd_reuse=True,
         total_due_in_cents=2800,
         places=3,
+        event=event,
+        bank_id="0002",
     ))
     rsrvtn.save()
     for choice_idx, item_idx, count in ((5, 1, 1), (5, 2, 1), (5, 5, 1), (3, 5, 1)):
@@ -88,6 +92,8 @@ def fill_db() -> tuple[Event, list[Item], list[tuple[Choice, list[Item]]], list[
         accepts_rgpd_reuse=False,
         total_due_in_cents=2200,
         places=1,
+        event=event,
+        bank_id="0003",
     ))
     rsrvtn.save()
     for choice_idx, item_idx, count in ((5, 1, 1), (5, 2, 1), (5, 5, 1)):

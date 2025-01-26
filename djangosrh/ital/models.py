@@ -44,11 +44,13 @@ class Choice(models.Model):
 
 
 class Item(models.Model):
-    display_text = models.CharField(max_length=200)
-    column_header = models.CharField(max_length=200)
-    short_text = models.CharField(max_length=200)
+    display_text = models.CharField(max_length=200, blank=False)
+    display_text_plural = models.CharField(max_length=200, blank=False)
+    column_header = models.CharField(max_length=200, blank=False)
+    short_text = models.CharField(max_length=200, blank=False)
     dish = models.CharField(max_length=10, choices=DishType)
     choices = models.ManyToManyField(Choice)
+    image = models.ImageField(upload_to='images/', null=True, blank=True)
 
     def __str__(self):
         return self.display_text
@@ -71,14 +73,16 @@ class ReservationItemCount(models.Model):
 
 class Reservation(models.Model):
     civility = models.CharField(max_length=20, choices=Civility, default=Civility.__empty__)
-    last_name = models.CharField(max_length=200)
+    last_name = models.CharField(max_length=200, blank=False)
     first_name = models.CharField(max_length=200, default="")
     email = models.CharField(max_length=200)
     accepts_rgpd_reuse = models.BooleanField()
     total_due_in_cents = models.IntegerField()
     places = models.IntegerField()
-    extra_comment = models.CharField(default="", max_length=200)
+    extra_comment = models.CharField(default="", max_length=200, blank=True)
     uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    bank_id = models.CharField(unique=True, editable=False, max_length=16)
+    event = models.ForeignKey("Event", on_delete=models.CASCADE)
 
     @property
     def full_name(self) -> str:
