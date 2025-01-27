@@ -129,6 +129,7 @@ form#reservation_form_id div.has-error div.error-message { display: inline; }
       <input class="form-control {% if form.was_validated %}{% if form.places.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %}" id="{{ form.places.id }}" max="50" min="1" name="{{ form.places.name }}" type="text" inputmode="numeric" pattern="\d\d?" value="{{ form.places.value }}">
     </div>
   </div>
+  {% if form.all_dishes and form.single_items %}
   <div class="container">
     <div class="row"><p class="text-primary text-center"><b>À la carte</b></p></div>
     <div class="row">
@@ -150,6 +151,7 @@ form#reservation_form_id div.has-error div.error-message { display: inline; }
       {% endfor %}
     </div>
   </div>
+  {% endif %}
   {% for pack in form.packs %}
   <div class="container">
     <div class="row"><span class="font-weight-bold text-primary text-center"><b>{{ pack.choice }}</b> {{ pack.choice.price_in_cents|cents_to_euros }}</span></div>

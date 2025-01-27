@@ -176,7 +176,8 @@ class ReservationForm:
                 total_due_in_cents=self.total_due_in_cents,
                 places=self.places.value,
                 extra_comment=self.extra_comment.value,
-                bank_id=generate_bank_id(time.time(), Reservation.objects.count()),
+                bank_id=append_bank_id_control_number(
+                    generate_bank_id(time.time(), Reservation.objects.count())),
             )
             reservation.save()
             for inpt in itertools.chain(
