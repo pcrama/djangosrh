@@ -15,8 +15,16 @@
 #+end_src
 
 * Alwaysdata setup
+** Application path
+=/home/<username>/= is prefilled, append =www/django1/djangosrh/djangosrh/wsgi.py=
+
+** Working directory
+=/home/<username>/= is prefilled, append =www/django1/djangosrh=
+
 ** Environment variables
 #+begin_example
+  POSTGRESQL_HOST=...
+  POSTGRESQL_USER=...
   POSTGRESQL_PASSWORD=...
   DJANGO_SECRET_KEY=...
   DJANGO_ALLOWED_HOSTS=*

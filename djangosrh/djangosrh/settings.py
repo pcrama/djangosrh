@@ -76,6 +76,17 @@ WSGI_APPLICATION = 'djangosrh.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "HOST": postgresql_host,
+        "NAME": postgresql_name,
+        "USER": postgresql_user,
+        "PASSWORD": postgresql_password,
+    }
+} if ((postgresql_password := getenv('POSTGRESQL_PASSWORD', '')) and
+      (postgresql_name := getenv('POSTGRESQL_NAME', '')) and
+      (postgresql_user := getenv('POSTGRESQL_USER', '')) and
+      (postgresql_host := getenv('POSTGRESQL_HOST', ''))) else {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
