@@ -1,0 +1,11 @@
+{% extends "ital/base_template.html" %}
+{% load currency_filter %}
+{% block title %}{{ reservation.full_name }} - {{ reservation.event.name }}{% endblock %}
+{% block content %}
+<p>
+  Vous avez déjà une réservation au nom de {{ reservation.full_name }} pour {{ reservation.places|plural:"place" }} le {{ reservation.event.date|french_date }} que vous pouvez <a href="{% url 'show_reservation' reservation.uuid %}">visualiser ici</a>.
+</p>
+<p>
+  Si au lieu de voir <a href="{% url 'show_reservation' reservation.uuid %}">votre ancienne réservation</a>, vous voulez vraiment <a class="link-underline-primary" href="{% url 'reservation_form' reservation.event_id %}?force=True">faire une nouvelle réservation, confirmez en cliquant ici</a>.
+</p>
+{% endblock %}

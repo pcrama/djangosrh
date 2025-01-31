@@ -1,3 +1,4 @@
+import time
 from collections import defaultdict
 from typing import Any, Iterator, Mapping
 
@@ -8,19 +9,13 @@ from django.urls import reverse
 import qrcode
 from qrcode.image.svg import SvgPathFillImage
 
+from core.banking import cents_to_euros, generate_payment_QR_code_content
+
 from .forms import ReservationForm
 from .models import Choice, Civility, DishType, Event, Item, Reservation, ReservationItemCount
-from .templatetags.currency_filter import cents_to_euros
 
 def index(request):
     return render(request, "ital/index.html")
-
-
-def generate_payment_QR_code_content(remaining_due: int, bank_id: str, event: Event) -> str:
-    # See scan2pay.info
-    iban = "".join(ch for ch in event.bank_account if ch in "BE" or ch.isdigit())
-    amount = cents_to_euros(remaining_due, unit="")
-    return ("BCD\n001\n1\nSCT\n" + event.organizer_bic + "\n" + event.organizer_name + "\n" + iban + "\n" + "EUR" + amount + "\n\n" + bank_id)
 
 
 def show_reservation(request, uuid: str) -> HttpResponse:
@@ -39,7 +34,12 @@ def show_reservation(request, uuid: str) -> HttpResponse:
         "remaining_amount_due_in_cents": remaining_due,
         "items": items,
         "payment_qrcode": qrcode.make(
-            generate_payment_QR_code_content(remaining_due, reservation.bank_id, reservation.event),
+            generate_payment_QR_code_content(
+                remaining_due,
+                bank_id=reservation.bank_id,
+                bank_account=reservation.event.bank_account,
+                organizer_bic=reservation.event.organizer_bic,
+                organizer_name=reservation.event.organizer_name),
             image_factory=SvgPathFillImage
         ).to_string().decode('utf8'),
         "page_qrcode": qrcode.make(
@@ -67,10 +67,32 @@ def reservations(request, event_id: int):
             "reservations": Reservation.objects.filter(event_id=event_id)[offset:offset+limit]})
 
 def reservation_form(request, event_id: int) -> HttpResponse:
+    try:
+        if request.GET.get("force") == "True":
+            reservation_cookie = None
+        else:
+            # Check for recent reservations in the session
+            reservation_cookie = request.session.get("recent_reservation")
+
+        if (reservation_cookie
+            and (uuid := reservation_cookie.get("uuid"))
+            and (reservation_time := reservation_cookie.get("time"))
+            and (time.time() > reservation_time)
+            and (time.time() - reservation_time <= 30 * 60)
+            and (recent_reservation := Reservation.objects.get(uuid=uuid))):
+            return render(
+                request,
+                "ital/double_reservation.html",
+                {"reservation": recent_reservation})
+    except Exception:
+        pass
+
     event = get_object_or_404(Event, pk=event_id)
     if request.method == "POST":
         form = ReservationForm(event, data=request.POST)
         if reservation := form.save():
+            # Store reservation info in the session
+            request.session["recent_reservation"] = {"uuid": str(reservation.uuid), "time": time.time()}
             return HttpResponseRedirect(reverse("show_reservation", kwargs={"uuid": reservation.uuid}))
         else:
             return render(

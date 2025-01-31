@@ -138,3 +138,7 @@ class IntegrationTestCases(TestCase):
             item = self.items[item_idx]
             with self.subTest(reservation=reservation, item=item):
                 self.assertEqual(reservation.count_items(item), expected_count)
+
+# Local Variables:
+# compile-command: "uv run python ../../manage.py test ital"
+# End:

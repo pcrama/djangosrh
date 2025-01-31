@@ -6,31 +6,9 @@ import re
 import time
 from typing import Any, Callable, Sequence
 
+from core.banking import generate_bank_id
+
 from .models import Civility, Event, Item, Reservation, ReservationItemCount
-
-
-def generate_bank_id(time_time, number_of_previous_calls):
-    data = [(x & ((1 << b) - 1), b)
-            for (x, b)
-            in ((round(time_time * 100.0), 24),
-                (number_of_previous_calls, 9))]
-    n = 0
-    for (x, b) in data:
-        n = (n << b) + x
-    return f'{n:010}'
-
-
-def append_bank_id_control_number(s):
-    n = 0
-    for c in s:
-        if c == '/':
-            continue
-        elif not c.isdigit():
-            raise Exception(f'{c} is not a digit')
-        n = (n * 10 + int(c)) % 97
-    if n == 0:
-        n = 97
-    return f'{s}{n:02}'
 
 
 class ReservationForm:
@@ -176,8 +154,7 @@ class ReservationForm:
                 total_due_in_cents=self.total_due_in_cents,
                 places=self.places.value,
                 extra_comment=self.extra_comment.value,
-                bank_id=append_bank_id_control_number(
-                    generate_bank_id(time.time(), Reservation.objects.count())),
+                bank_id=generate_bank_id(time.time(), Reservation.objects.count()),
             )
             reservation.save()
             for inpt in itertools.chain(

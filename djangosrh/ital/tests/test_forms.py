@@ -237,3 +237,7 @@ class IntegrationTestCases(TestCase):
         self.assertEqual(data.count_items(self.items[4]), 1)
         self.assertEqual(data.count_items(self.items[5]), 2 + 2)
         self.assertEqual(data.count_items(self.items[6]), 1)
+
+# Local Variables:
+# compile-command: "uv run python ../../manage.py test ital"
+# End:

@@ -11,7 +11,7 @@
 
 * Testing
 #+begin_src shell :exports code
-  (cd djangosrh ; python manage.py test)
+  (cd djangosrh ; python manage.py test ital ; python manage.py test core)
 #+end_src
 
 * Alwaysdata setup
