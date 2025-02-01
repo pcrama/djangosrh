@@ -148,12 +148,16 @@ form#reservation_form_id div.has-error div.error-message { display: inline; }
           {% endfor %}{% endif %}{% endfor %}
         </div>
       </div>
+      <!-- Add horizontal separator only when columns stack (below `sm` breakpoint) -->
+      {% if not forloop.last %}
+      <div class="col-12 d-sm-none"><hr></div>
+      {% endif %}
       {% endfor %}
     </div>
   </div>
   {% endif %}
   {% for pack in form.packs %}
-  <div class="container">
+  <div class="container border-top border-primary">
     <div class="row"><span class="font-weight-bold text-primary text-center"><b>{{ pack.choice }}</b> {{ pack.choice.price_in_cents|cents_to_euros }}</span></div>
     {% if pack.errors %}<div class="row">{% for err in pack.errors %}<div class="form-text text-center bg-danger text-white">{{ err }}</div>{% endfor %}</div>{% endif %}
     <div class="row no-gutters">
@@ -173,7 +177,11 @@ form#reservation_form_id div.has-error div.error-message { display: inline; }
           {% endfor %}{% endif %}{% endfor %}
         </div>
       </div>
-      {% endfor %}
+      <!-- Add horizontal separator only when columns stack (below `sm` breakpoint) -->
+      {% if not forloop.last %}
+      <div class="col-12 d-sm-none"><hr></div>
+      {% endif %}
+    {% endfor %}
     </div>
   </div>
   {% endfor %}
