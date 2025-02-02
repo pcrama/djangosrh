@@ -32,6 +32,7 @@ ALLOWED_HOSTS = [] if DEBUG else getenv('DJANGO_ALLOWED_HOSTS', '').split(',')
 # Application definition
 
 INSTALLED_APPS = [
+    'core.apps.CoreConfig',
     'ital.apps.ItalConfig',
     'django.contrib.admin',
     'django.contrib.auth',
