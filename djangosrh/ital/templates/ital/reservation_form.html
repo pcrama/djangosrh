@@ -90,6 +90,9 @@ form#reservation_form_id div.has-error div.error-message { display: inline; }
 </script>
 <form id="reservation_form_id" action="{% url 'reservation_form' form.event.id %}" method="post">
   {% csrf_token %}
+  {% if form.was_validated and form.errors %}
+  <div class="row invalid-feedback" style="display: inline;">{% for err in form.errors %}{{ err }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</div>
+  {% endif %}
   <div class="row" style="display: flex;">
     <div class="col-sm-1">
       <select class="form-control {% if form.was_validated %}{% if form.first_name.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %}" id="{{ form.civility.id }}" name="{{ form.civility.name }}">
@@ -185,11 +188,9 @@ form#reservation_form_id div.has-error div.error-message { display: inline; }
     </div>
   </div>
   {% endfor %}
-  {% for err in form.errors %}
-  <div class="invalid-feedback">
-    {{ err }}
-  </div>
-  {% endfor %}
+  {% if form.was_validated and form.errors %}
+  <div class="row invalid-feedback" style="display: inline;">{% for err in form.errors %}{{ err }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</div>
+  {% endif %}
   <div class="container"><div class="row"><input class="form-control" type="submit" value="OK" id="reservation-submit"></div></div>
 </form>
 {% endblock %}

@@ -32,6 +32,9 @@ class Event(models.Model):
     def __str__(self):
         return f"{self.name}@{self.date}"
 
+    def occupied_seats(self) ->int:
+        return self.reservation_set.aggregate(models.Sum("places", default=0))["places__sum"]
+
 
 class Choice(models.Model):
     "What a customer chooses, can be 1 or more items grouped together (e.g. a starter/main dish/dessert pack)"

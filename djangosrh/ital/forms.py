@@ -1,10 +1,11 @@
 from collections import defaultdict, namedtuple
+from collections.abc import Sequence
 import functools
 import itertools
 import operator
 import re
 import time
-from typing import Any, Callable, Sequence
+from typing import Any, Callable
 
 from core.banking import generate_bank_id
 
@@ -22,12 +23,14 @@ class ReservationForm:
     single_items: dict[str, list[Input]]
     packs: list[Pack]
     total_due_in_cents: int
+    errors: list[str]
 
     def __init__(self, evt: Event, data=None):
         self.event = evt
         self.was_validated, self.data = (False, defaultdict(int)) if data is None else (True, data)
         self.single_items = defaultdict(list)
         self.packs = []
+        self.errors = []
         self.clean_data()
 
     def is_valid(self) -> bool:
@@ -144,6 +147,9 @@ class ReservationForm:
 
     def save(self) -> Reservation | None:
         if self.is_valid():
+            if self.places.value + self.event.occupied_seats() > self.event.max_seats:
+                self.errors.append(f"Il n'y a plus assez de places.  Contactez nous: {self.event.contact_email}")
+                return None
             reservation = Reservation(
                 event=self.event,
                 civility=self.civility.value,

@@ -68,7 +68,7 @@ def reservations(request, event_id: int):
 
 def reservation_form(request, event_id: int) -> HttpResponse:
     try:
-        if request.GET.get("force") == "True":
+        if request.method == "POST" or request.GET.get("force") == "True":
             reservation_cookie = None
         else:
             # Check for recent reservations in the session
@@ -88,7 +88,7 @@ def reservation_form(request, event_id: int) -> HttpResponse:
         pass
 
     event = get_object_or_404(Event, pk=event_id)
-    if event.disabled or event.reservation_set.aggregate(Sum("places", default=0))["places__sum"] >= event.max_seats:
+    if event.disabled or event.occupied_seats() >= event.max_seats:
         return render(request, "ital/event_disabled.html", context={"event": event})
 
     if request.method == "POST":
