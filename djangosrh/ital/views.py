@@ -88,6 +88,9 @@ def reservation_form(request, event_id: int) -> HttpResponse:
         pass
 
     event = get_object_or_404(Event, pk=event_id)
+    if event.disabled or event.reservation_set.aggregate(Sum("places", default=0))["places__sum"] >= event.max_seats:
+        return render(request, "ital/event_disabled.html", context={"event": event})
+
     if request.method == "POST":
         form = ReservationForm(event, data=request.POST)
         if reservation := form.save():

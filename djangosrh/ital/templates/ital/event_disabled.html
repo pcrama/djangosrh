@@ -1,0 +1,7 @@
+{% extends "ital/base_template.html" %}
+{% block title %}{{ event.name }}{% endblock %}
+{% block content %}
+<p>
+  Hélas, nous n'acceptons pas de réservations pour l'événement '{{ event.name }}' pour le moment.  Vous pouvez <a href="mailto:{{ event.contact_email }}">nous contacter par courrier électronique ({{ event.contact_email }})</a> pour plus de renseignements.
+</p>
+{% endblock %}
