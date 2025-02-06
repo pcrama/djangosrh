@@ -1,4 +1,7 @@
+from collections import namedtuple
+from collections.abc import Iterator
 import uuid
+
 from django.db import models
 
 from enum import Enum
@@ -34,6 +37,18 @@ class Event(models.Model):
 
     def occupied_seats(self) ->int:
         return self.reservation_set.aggregate(models.Sum("places", default=0))["places__sum"]
+
+    ItemSummary = namedtuple("ItemSummary", "id,display_text,display_text_plural,total_count")
+
+    def reservation_items(self) -> list[ItemSummary]:
+        return list(
+            self.ItemSummary(id=itm["item__id"], display_text=itm["item__display_text"], display_text_plural=itm["item__display_text_plural"], total_count=itm["total_count"]) for itm in 
+        ReservationItemCount.objects
+        .filter(reservation__event_id=self.id)
+        .values("item__display_text", "item__id", "item__display_text", "item__display_text_plural")
+        .annotate(total_count=models.Sum("count", default=0))
+        .order_by("item__dish", "item__id")
+    )
 
 
 class Choice(models.Model):

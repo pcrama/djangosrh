@@ -139,6 +139,18 @@ class IntegrationTestCases(TestCase):
             with self.subTest(reservation=reservation, item=item):
                 self.assertEqual(reservation.count_items(item), expected_count)
 
+    def test_event_reservation_items(self):
+        self.assertEqual(
+            self.event.reservation_items(),
+            [
+                Event.ItemSummary(id=1, display_text='<>Tomate Mozza<>', display_text_plural='P(Tomate Mozza)', total_count=2),
+                Event.ItemSummary(id=2, display_text='<>Croquettes<>', display_text_plural='P(Croquettes)', total_count=3),
+                Event.ItemSummary(id=3, display_text='<>Bolo<>', display_text_plural='P(Bolo)', total_count=2),
+                Event.ItemSummary(id=4, display_text='<>Scampis<>', display_text_plural='P(Scampis)', total_count=1),
+                Event.ItemSummary(id=5, display_text='<>Vegetarian<>', display_text_plural='P(Vegetarian)', total_count=1),
+                Event.ItemSummary(id=6, display_text='<>Tiramisu<>', display_text_plural='P(Tiramisu)', total_count=4),
+                Event.ItemSummary(id=7, display_text='<>Glace<>', display_text_plural='P(Glace)', total_count=1)])
+
 # Local Variables:
 # compile-command: "uv run python ../../manage.py test ital"
 # End:

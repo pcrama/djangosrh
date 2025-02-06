@@ -2,16 +2,59 @@
 {% load currency_filter %}
 {% block title %}{{ event.name }}{% endblock %}
 {% block content %}
-Il y a {{ event.reservation_set.count|plural:"réservation" }}.
+Il y a {{ event.reservation_set.count|plural:"réservation" }} pour {{ total_count|plural:"place réservée,places réservées" }}.
+<ul>
+{% for itm in event.reservation_items %}
+  <li>{{ itm.total_count }} {% if itm.total_count == 1%}{{ itm.display_text }}{% else %}{{ itm.display_text_plural }}{% endif %}</li>
+{% endfor %}
+</ul>
+{% if page_obj.has_previous or page_obj.has_next %}
+<div class="pagination">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a class="link-primary" href="?page=1">&laquo; first</a>
+            {% if page_obj.previous_page_number > 1 %}<a class="link-primary" href="?page={{ page_obj.previous_page_number }}">previous</a>{% endif %}
+        {% endif %}
+
+        <span class="current">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+            {% if page_obj.next_page_number < page_obj.paginator.num_pages %}<a class="link-primary" href="?page={{ page_obj.next_page_number }}">next</a>{% endif %}
+            <a class="link-primary" href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </span>
+</div>
+{% endif %}
 <table>
   {% for reservation in reservations %}
   <tr>
     <td>
-      <a href="{% url 'show_reservation' reservation.uuid %}">{{ reservation }}</a>
+      <a class="link-primary" href="{% url 'show_reservation' reservation.uuid %}">{{ reservation }}</a>
     </td>
-    <td>{{reservation.places}}</td>
-    <td>{{ reservation.total_due_in_cents|cents_to_euros }}</td>
+    <td class="ps-1 text-end">{{reservation.places}}</td>
+    <td class="ps-1 text-end">{{ reservation.total_due_in_cents|cents_to_euros }}</td>
   </tr>
   {% endfor %}
 </table>
+{% if page_obj.has_previous or page_obj.has_next %}
+<div class="pagination">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a class="link-primary" href="?page=1">&laquo; first</a>
+            {% if page_obj.previous_page_number > 1 %}<a class="link-primary" href="?page={{ page_obj.previous_page_number }}">previous</a>{% endif %}
+        {% endif %}
+
+        <span class="current">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+            {% if page_obj.next_page_number < page_obj.paginator.num_pages %}<a class="link-primary" href="?page={{ page_obj.next_page_number }}">next</a>{% endif %}
+            <a class="link-primary" href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </span>
+</div>
+{% endif %}
 {% endblock %}

@@ -2,10 +2,13 @@ import time
 from collections import defaultdict
 from typing import Any, Iterator, Mapping
 
+from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
+from django.views.generic import ListView
+
 import qrcode
 from qrcode.image.svg import SvgPathFillImage
 
@@ -46,8 +49,40 @@ def show_reservation(request, uuid: str) -> HttpResponse:
             request.build_absolute_uri(), image_factory=SvgPathFillImage
         ).to_string().decode('utf8')})
 
-def reservations(request, event_id: int):
-    event = get_object_or_404(Event, id=event_id)
+
+
+class ReservationListView(ListView):
+    event_id: int | None = None
+    event: Event | None = None
+    template_name = "ital/reservations.html"
+    context_object_name = "reservations"
+    paginate_by = 20
+
+    def setup(self, request, *args, **kwargs) -> None:
+        super().setup(request, *args, **kwargs)
+        self.event = (
+            Event.objects.filter(disabled=False).order_by("date").first()
+            if (event_id := request.GET.get('event_id')) is None
+            else get_object_or_404(Event, id=event_id))
+        self.event_id = self.event.id
+
+    def get_queryset(self):
+        return Reservation.objects.filter(event_id=self.event_id)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["event"] = self.event
+        return context
+
+
+@login_required(login_url='/login')
+def reservations(request):
+    if (event_id := request.GET.get('event_id')) is None:
+        event = Event.objects.filter(disabled=False).order_by("date").first()
+        event_id = event.id
+    else:
+        event = get_object_or_404(Event, id=event_id)
+
     try:
         offset = int(request.GET.get('offset', '0'))
     except Exception:
@@ -64,7 +99,9 @@ def reservations(request, event_id: int):
         "ital/reservations.html",
         {
             "event": event,
-            "reservations": Reservation.objects.filter(event_id=event_id)[offset:offset+limit]})
+            "reservations": Reservation.objects.filter(event_id=event_id)[offset:offset+limit],
+            "total_count": Reservation.objects.filter(event__id=event_id).aggregate(Sum("places", default=0))["places__sum"]})
+
 
 def reservation_form(request, event_id: int) -> HttpResponse:
     try:
