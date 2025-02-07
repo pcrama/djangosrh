@@ -65,43 +65,16 @@ class ReservationListView(LoginRequiredMixin, ListView):
             Event.objects.filter(disabled=False).order_by("date").first()
             if (event_id := request.GET.get('event_id')) is None
             else get_object_or_404(Event, id=event_id))
-        self.event_id = self.event.id
+        self.event_id = None if self.event is None else self.event.id
 
     def get_queryset(self):
         return Reservation.objects.filter(event_id=self.event_id)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["event"] = self.event
+        if self.event is not None:
+            context["event"] = self.event
         return context
-
-
-@login_required(login_url='/login')
-def reservations(request):
-    if (event_id := request.GET.get('event_id')) is None:
-        event = Event.objects.filter(disabled=False).order_by("date").first()
-        event_id = event.id
-    else:
-        event = get_object_or_404(Event, id=event_id)
-
-    try:
-        offset = int(request.GET.get('offset', '0'))
-    except Exception:
-        offset = 0
-    try:
-        limit = int(request.GET.get('limit', '20'))
-    except Exception:
-        limit = 20
-    offset = max(offset, 0)
-    limit = max(20, min(limit, 200))
-
-    return render(
-        request,
-        "ital/reservations.html",
-        {
-            "event": event,
-            "reservations": Reservation.objects.filter(event_id=event_id)[offset:offset+limit],
-            "total_count": Reservation.objects.filter(event__id=event_id).aggregate(Sum("places", default=0))["places__sum"]})
 
 
 def reservation_form(request, event_id: int) -> HttpResponse:

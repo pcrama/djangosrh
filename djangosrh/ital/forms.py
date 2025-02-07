@@ -76,7 +76,7 @@ class ReservationForm:
             return []
         def _mandatory_email(id: str) -> list[str]:
             return _mandatory(id) or (
-                [] if id in self.data and (ss := self.data[id]) and isinstance(ss, str) and re.match(r" *[a-z.0-9-]+@[a-z.0-9-]+ *", ss) else ["Invalid email"])
+                [] if id in self.data and (ss := self.data[id]) and isinstance(ss, str) and re.match(r" *[a-zA-Z.0-9-]+@[a-zA-Z.0-9-]+ *", ss) else ["Invalid email"])
         def _mandatory_in_range(low: int, high: int) -> Callable[[str], list[str]]:
             def work(id: str) -> list[str]:
                 if (err := _mandatory(id)):

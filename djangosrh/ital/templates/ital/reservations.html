@@ -2,11 +2,22 @@
 {% load currency_filter %}
 {% block title %}{{ event.name }}{% endblock %}
 {% block content %}
-<form action="{% url 'logout' %}" method="post">
-  {% csrf_token %}
-  <button type="submit">Log Out</button>
-</form>
-<p>Il y a {{ event.reservation_set.count|plural:"réservation" }} pour {{ total_count|plural:"place réservée,places réservées" }}.</p>
+<div class="container">
+  <div class="row">
+    <div class="col-sm-8">
+      Il y a {{ event.reservation_set.count|plural:"réservation" }} pour {{ total_count|plural:"place réservée,places réservées" }}.
+    </div>
+    <div class="col-sm-2">
+      <a class="link-primary" href="{% url 'reservation_form' event.id %}">Nouvelle réservation</a>
+    </div>
+    <div class="col-sm-2">
+      <form action="{% url 'logout' %}" method="post">
+        {% csrf_token %}
+        <button type="submit">Log Out</button>
+      </form>
+    </div>
+  </div>
+</div>
 <ul>
 {% for itm in event.reservation_items %}
   <li>{{ itm.total_count }} {% if itm.total_count == 1%}{{ itm.display_text }}{% else %}{{ itm.display_text_plural }}{% endif %}</li>
