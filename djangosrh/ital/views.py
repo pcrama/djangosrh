@@ -3,6 +3,7 @@ from collections import defaultdict
 from typing import Any, Iterator, Mapping
 
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Sum
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
@@ -51,7 +52,7 @@ def show_reservation(request, uuid: str) -> HttpResponse:
 
 
 
-class ReservationListView(ListView):
+class ReservationListView(LoginRequiredMixin, ListView):
     event_id: int | None = None
     event: Event | None = None
     template_name = "ital/reservations.html"

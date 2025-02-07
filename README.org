@@ -46,4 +46,10 @@
   python manage.py migrate
   python manage.py collectstatic --noinput
   # Only once, doesn't need database password?: python manage.py createsuperuser
+  # With this superuser, create a user to track reservations in /ital/reservations
 #+end_src
+
+* Backing up
+- Event images for configuration: djangosrh/djangosrh/media/images/
+- Dump all tables from https://phppgadmin.alwaysdata.com (using "port
+  postgresql" user/password)

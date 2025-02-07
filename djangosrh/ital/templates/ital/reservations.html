@@ -2,7 +2,11 @@
 {% load currency_filter %}
 {% block title %}{{ event.name }}{% endblock %}
 {% block content %}
-Il y a {{ event.reservation_set.count|plural:"réservation" }} pour {{ total_count|plural:"place réservée,places réservées" }}.
+<form action="{% url 'logout' %}" method="post">
+  {% csrf_token %}
+  <button type="submit">Log Out</button>
+</form>
+<p>Il y a {{ event.reservation_set.count|plural:"réservation" }} pour {{ total_count|plural:"place réservée,places réservées" }}.</p>
 <ul>
 {% for itm in event.reservation_items %}
   <li>{{ itm.total_count }} {% if itm.total_count == 1%}{{ itm.display_text }}{% else %}{{ itm.display_text_plural }}{% endif %}</li>
