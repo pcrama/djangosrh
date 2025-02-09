@@ -1,0 +1,12 @@
+{% extends "core/base_template.html" %}
+{% load currency_filter %}
+{% block title %}Payment import errors{% endblock %}
+{% block content %}
+Il y avait {{ result|length|plural:"transaction" }} en tout.
+<ul>
+  {% for rslt in result %}
+  <li{% if rslt.0 %} class="text-danger"{% endif %}>
+    {% if rslt.0 %}{{ rslt.0 }}<br>{% endif %}{{ rslt.1.bank_ref }} {{ rslt.1.date_received|french_date }} {{ rslt.1.other_name }} {{ rslt.1.other_account }} {{ rslt.1.amount_in_cents|cents_to_euros }}</li>
+  {% endfor %}
+</ul>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends "core/base_template.html" %}
+{% load currency_filter %}
+{% block title %}Payments{% endblock %}
+{% block content %}
+<form class="container" action="{% url 'upload_payment_csv' %}" method="POST" enctype="multipart/form-data">
+  {% csrf_token %}
+  <input type="submit" class="form-control" value="Upload new bank statements">
+  <input class="form-control" type="file" name="formFile">
+</form>
+<hr>
+<nav>
+  <ul class="pagination">
+    {% if page_obj.has_previous %}
+    <li class="page-item"><a class="page-link" href="?page=1&order_by={{ order_by }}&only_active={{ only_active }}&paginate_by={{ paginate_by }}">&laquo; first</a></li>
+    {% if page_obj.previous_page_number > 1 %}
+    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&order_by={{ order_by }}&only_active={{ only_active }}&paginate_by={{ paginate_by }}">previous</a><li>{% endif %}
+    {% endif %}
+    <li class="page-item active">
+      <a class="page-link disabled" tabindex="-1" href="">#{{ page_obj.number }}/{{ page_obj.paginator.num_pages }}</a>
+    </li>
+    {% if page_obj.has_next %}
+    {% if page_obj.paginator.num_pages > page_obj.next_page_number %}
+    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&order_by={{ order_by }}&only_active={{ only_active }}&paginate_by={{ paginate_by }}">next</a></li>{% endif %}
+    <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&order_by={{ order_by }}&only_active={{ only_active }}&paginate_by={{ paginate_by }}">last &raquo;</a></li>
+    {% endif %}
+    {% for page_size in page_sizes %}
+    {% if page_size != paginate_by %}
+    <li class="page-item"><a class="page-link" href="?page=1&order_by={{ order_by }}&only_active={{ only_active }}&paginate_by={{ page_size }}">{{ page_size }}/page</a></li>
+    {% endif %}
+    {% endfor %}
+    <li class="page-item"><a class="page-link" href="?page=1&order_by={{ order_by }}&only_active={% if only_active %}False{% else %}True{% endif %}&paginate_by={{ paginate_by }}">{% if only_active %}Montrer tout{% else %}Cacher partiellement{% endif %}</a></li>
+  </ul>
+</nav>
+<div class="table-responsive-md"><table class="table table-hover table-sm table-striped">
+    <thead>
+      <tr>
+        <td><a class="link-primary" href="?order_by={% if order_by == 'src_id' %}SRC_ID{% else %}src_id{% endif %}&only_active={{ only_active }}&paginate_by={{ paginate_by }}">ID{% if order_by == 'SRC_ID' %}↓{% elif order_by == 'src_id' %}↑{% endif %}</a></td>
+        <td>
+          <div class="d-flex justify-content-between"><div class="text-left">
+            <a class="link-primary" href="?order_by={% if order_by == 'other_name' %}OTHER_NAME{% else %}other_name{% endif %}&only_active={{ only_active }}&paginate_by={{ paginate_by }}">Nom{% if order_by == 'OTHER_NAME' %}↓{% elif order_by == 'other_name' %}↑{% endif %}</a>
+            </div><div class="text-center"> &mdash; </div><div class="text-center">
+            <a class="link-primary" href="?order_by={% if order_by == 'other_account' %}OTHER_ACCOUNT{% else %}other_account{% endif %}&only_active={{ only_active }}&paginate_by={{ paginate_by }}">Compte{% if order_by == 'OTHER_ACCOUNT' %}↓{% elif order_by == 'other_account' %}↑{% endif %}</a>
+          </div><div class="text-center"> &mdash; </div><div class="text-right">
+            <a class="link-primary" href="?order_by={% if order_by == 'comment' %}COMMENT{% else %}comment{% endif %}&only_active={{ only_active }}&paginate_by={{ paginate_by }}">Communication{% if order_by == 'COMMENT' %}↓{% elif order_by == 'comment' %}↑{% endif %}</a></div></div></td>
+        <td><a class="link-primary" href="?order_by={% if order_by == 'amount_in_cents' %}AMOUNT_IN_CENTS{% else %}amount_in_cents{% endif %}&only_active={{ only_active }}&paginate_by={{ paginate_by }}">Montant{% if order_by == "AMOUNT_IN_CENTS" %}↓{% elif order_by == "amount_in_cents" %}↑{% endif %}</a></td>
+        <td>&nbsp;</td>
+      </tr>
+    </thead>
+    <tbody>
+      {% for payment in payments %}
+      <tr>
+        <td>{{ payment.src_id }}</td>
+        <td><div class="d-flex justify-content-between"><div>{{ payment.other_name }} {{ payment.other_account }}</div><div>{{ payment.comment }}</div></td>
+        <td class="ps-1 text-end">{{ payment.amount_in_cents|cents_to_euros }}</td>
+        <td>
+          <form method="post" action="{% url 'toggle_payment_active_status' %}">
+            {% csrf_token %}
+            <input type="hidden" name="bank_ref" value="{{ payment.bank_ref }}">
+            <input type="hidden" name="new_active" value="{% if payment.active %}False{% else %}True{% endif %}">
+            <input type="hidden" name="next" value="{% url 'payments' %}?page={{ page_obj.number }}&order_by={{ order_by }}&only_active={{ only_active }}&paginate_by={{ paginate_by }}">
+            <input class="form-control" type="submit" value="{% if payment.active %}Cacher{% else %}Montrer{% endif %}">
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+</table></div>
+{% if page_obj.has_previous or page_obj.has_next %}
+<nav>
+  <ul class="pagination">
+    {% if page_obj.has_previous %}
+    <li class="page-item"><a class="page-link" href="?page=1&order_by={{ order_by }}&only_active={{ only_active }}&paginate_by={{ paginate_by }}">&laquo; first</a></li>
+    {% if page_obj.previous_page_number > 1 %}
+    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&order_by={{ order_by }}&only_active={{ only_active }}&paginate_by={{ paginate_by }}">previous</a><li>{% endif %}
+    {% endif %}
+    <li class="page-item active">
+      <a class="page-link disabled" tabindex="-1" href="">#{{ page_obj.number }}/{{ page_obj.paginator.num_pages }}</a>
+    </li>
+    {% if page_obj.has_next %}
+    {% if page_obj.paginator.num_pages > page_obj.next_page_number %}
+    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&order_by={{ order_by }}&only_active={{ only_active }}&paginate_by={{ paginate_by }}">next</a></li>{% endif %}
+    <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&order_by={{ order_by }}&only_active={{ only_active }}&paginate_by={{ paginate_by }}">last &raquo;</a></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+{% endblock %}
