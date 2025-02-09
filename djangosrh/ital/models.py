@@ -4,7 +4,7 @@ import uuid
 
 from django.db import models
 
-from enum import Enum
+from core.models import Payment
 
 
 class Civility(models.TextChoices):
@@ -112,3 +112,12 @@ class Reservation(models.Model):
     def count_items(self, item: Item|int) -> int:
         item_id = item.id if isinstance(item, Item) else item
         return sum(it.count for it in self.reservationitemcount_set.filter(item_id=item_id))
+
+
+class ReservationPayment(models.Model):
+    reservation = models.ForeignKey(Reservation, on_delete=models.PROTECT)
+    payment = models.ForeignKey(Payment, on_delete=models.PROTECT)
+    confirmation_sent_timestamp = models.DateTimeField(null=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint("payment", name="unique_payment")]
