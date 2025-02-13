@@ -1,7 +1,8 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from django.test import TestCase
 
+from core.models import Payment
 from ..models import (
     Choice,
     Civility,
@@ -10,6 +11,7 @@ from ..models import (
     Item,
     Reservation,
     ReservationItemCount,
+    ReservationPayment,
 )
 
 
@@ -58,7 +60,7 @@ def fill_db() -> tuple[Event, list[Item], list[tuple[Choice, list[Item]]], list[
         total_due_in_cents=7900,
         places=2,
         event=event,
-        bank_id="0001",
+        bank_id="001000100001",
     ))
     rsrvtn.save()
     for choice_idx, item_idx, count in (
@@ -76,7 +78,7 @@ def fill_db() -> tuple[Event, list[Item], list[tuple[Choice, list[Item]]], list[
         total_due_in_cents=2800,
         places=3,
         event=event,
-        bank_id="0002",
+        bank_id="002000200002",
     ))
     rsrvtn.save()
     for choice_idx, item_idx, count in ((5, 1, 1), (5, 2, 1), (5, 5, 1), (3, 5, 1)):
@@ -93,13 +95,88 @@ def fill_db() -> tuple[Event, list[Item], list[tuple[Choice, list[Item]]], list[
         total_due_in_cents=2200,
         places=1,
         event=event,
-        bank_id="0003",
+        bank_id="003000300003",
     ))
     rsrvtn.save()
     for choice_idx, item_idx, count in ((5, 1, 1), (5, 2, 1), (5, 5, 1)):
         reservation_item_count = ReservationItemCount(reservation=rsrvtn, choice=choices[choice_idx][0], item=items[item_idx], count=count)
         reservation_item_count.save()
         rsrvtn.reservationitemcount_set.add(reservation_item_count)
+
+    Payment(
+        date_received=date(2025, 2, 22),
+        amount_in_cents=2200,
+        comment="+++003/0003/00003+++",
+        src_id="2025-0001",
+        bank_ref="202502221234560001",
+        other_account="BE00 1234 1234 1234 2134",
+        other_name="Priv Ate's bank account",
+        status="Accepté",
+        active=True,
+        srh_bank_id="003000300003",
+    ).save()
+    Payment(
+        date_received=date(2025, 2, 13),
+        comment="001000100001",
+        src_id="2025-00122",
+        bank_ref="2025000000000",
+        other_account="Mr Who's broken bank account",
+        other_name="Mr Who refused",
+        amount_in_cents=2345,
+        status="Refusé",
+        active=True,
+        srh_bank_id="001000100001",
+    ).save()
+    Payment(
+        date_received=date(2025, 2, 13),
+        comment="001000100001",
+        src_id="2025-00121",
+        bank_ref="2025000000001",
+        other_account="Mr Who's inactive bank account",
+        other_name="Mr Who refused",
+        amount_in_cents=2345,
+        status="Accepté",
+        active=False,
+        srh_bank_id="001000100001",
+    ).save()
+    Payment(
+        date_received=date(2025, 2, 13),
+        comment="001000100001",
+        src_id="2025-00123",
+        bank_ref="2025022812345",
+        other_account="Mr Who's bank account",
+        other_name="Mr Who",
+        amount_in_cents=2345,
+        status="Accepté",
+        active=True,
+        srh_bank_id="001000100001",
+    ).save()
+    Payment(
+        date_received=date(2025, 2, 13),
+        comment="+++001/0001/00001+++",
+        src_id="2025-00124",
+        bank_ref="2025022812444",
+        other_account="",
+        other_name="Dupont",
+        amount_in_cents=5455,
+        status="Accepté",
+        active=True,
+        srh_bank_id="001000100001",
+    ).save()
+    already_payed = Payment(
+        date_received=date(2025, 2, 13),
+        comment="+++001/0001/00001+++",
+        src_id="2025-00115",
+        bank_ref="2025022999999",
+        other_account="Mr Who already payed",
+        other_name="Dupont, Mr Who's sponsor",
+        amount_in_cents=100,
+        status="Accepté",
+        active=True,
+        srh_bank_id="001000100001",
+    )
+    already_payed.save()
+    ReservationPayment(reservation=reservations[0], payment=already_payed, confirmation_sent_timestamp=None).save()
 
     return event, items, choices, reservations
 
@@ -150,6 +227,7 @@ class IntegrationTestCases(TestCase):
                 Event.ItemSummary(id=5, display_text='<>Vegetarian<>', display_text_plural='P(Vegetarian)', total_count=1),
                 Event.ItemSummary(id=6, display_text='<>Tiramisu<>', display_text_plural='P(Tiramisu)', total_count=4),
                 Event.ItemSummary(id=7, display_text='<>Glace<>', display_text_plural='P(Glace)', total_count=1)])
+        
 
 # Local Variables:
 # compile-command: "uv run python ../../manage.py test ital"

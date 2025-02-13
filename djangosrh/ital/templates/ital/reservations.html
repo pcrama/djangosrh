@@ -50,6 +50,7 @@
     </td>
     <td class="ps-1 text-end">{{reservation.places}}</td>
     <td class="ps-1 text-end">{{ reservation.total_due_in_cents|cents_to_euros }}</td>
+    <td class="ps-1 text-end">{{ reservation.total_received_in_cents|cents_to_euros }}</td>
   </tr>
   {% endfor %}
 </table>

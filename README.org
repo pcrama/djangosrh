@@ -14,6 +14,21 @@
   (cd djangosrh ; python manage.py test ital ; python manage.py test core)
 #+end_src
 
+Run a shell, from the project directory:
+#+begin_src shell :exports code
+  python3 djangosrh/manage.py shell --no-color --pythonpath ./djangosrh/
+#+end_src
+
+Run the unit tests in the python debugger from the project directory:
+#+begin_src shell :exports code
+  python3 djangosrh/manage.py test --pdb
+#+end_src
+
+Run the server from the project directory:
+#+begin_src shell :exports code
+  python djangosrh/manage.py runserver
+#+end_src
+
 * Alwaysdata setup
 ** Application path
 =/home/<username>/= is prefilled, append =www/django1/djangosrh/djangosrh/wsgi.py=

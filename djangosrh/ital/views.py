@@ -1,10 +1,11 @@
-import time
 from collections import defaultdict
+from datetime import date, timedelta
+import time
 from typing import Any, Iterator, Mapping
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Sum
+from django.db.models import Exists, OuterRef, Prefetch, QuerySet, Subquery, Sum, IntegerField, CharField
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
@@ -15,8 +16,9 @@ from qrcode.image.svg import SvgPathFillImage
 
 from core.banking import cents_to_euros, generate_payment_QR_code_content
 
+from core.models import Payment
 from .forms import ReservationForm
-from .models import Choice, Civility, DishType, Event, Item, Reservation, ReservationItemCount
+from .models import Choice, Civility, DishType, Event, Item, Reservation, ReservationItemCount, ReservationPayment
 
 def index(request):
     return render(request, "ital/index.html")
@@ -30,9 +32,12 @@ def show_reservation(request, uuid: str) -> HttpResponse:
         reservation.reservationitemcount_set
         .order_by('item__dish', 'item__display_text')
         .values("item__dish", "item__display_text", "item__display_text_plural")
-        .annotate(total_count=Sum("count"))
+        .annotate(total_count=Sum("count", default=0))
     ]
-    remaining_due = reservation.total_due_in_cents # TODO: integrate with payments
+    remaining_due = (
+        reservation.total_due_in_cents -
+        reservation.reservationpayment_set.aggregate(
+            Sum("payment__amount_in_cents", default=0))['payment__amount_in_cents__sum'])
     return render(request, "ital/show_reservation.html", {
         "reservation": reservation,
         "remaining_amount_due_in_cents": remaining_due,
@@ -51,7 +56,6 @@ def show_reservation(request, uuid: str) -> HttpResponse:
         ).to_string().decode('utf8')})
 
 
-
 class ReservationListView(LoginRequiredMixin, ListView):
     event_id: int | None = None
     event: Event | None = None
@@ -68,7 +72,11 @@ class ReservationListView(LoginRequiredMixin, ListView):
         self.event_id = None if self.event is None else self.event.id
 
     def get_queryset(self):
-        return Reservation.objects.filter(event_id=self.event_id)
+        return get_reservations_with_likely_payments(
+            date(2025, 2, 12)
+            if self.event is None else
+            (self.event.date - timedelta(days=90)),
+            Reservation.objects.filter(event_id=self.event_id))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -115,3 +123,36 @@ def reservation_form(request, event_id: int) -> HttpResponse:
                 {"form": form}, status=422)
     return render(request, "ital/reservation_form.html", {
         "form": ReservationForm(event)})
+
+
+def get_reservations_with_likely_payments(min_date_received: date, reservations: QuerySet):
+    # Subquery to get the payment with the lowest bank_ref that matches the constraints
+    matching_payment_subquery = (
+        Payment.objects.filter(
+            srh_bank_id=OuterRef("bank_id"),
+            status="Accepté",
+            active=True,
+            date_received__gt=min_date_received,
+        )
+        .exclude(
+            id__in=ReservationPayment.objects.values_list("payment_id", flat=True)
+        )
+        .order_by("bank_ref")  # Order by lowest bank_ref
+        [:1]
+    )
+
+    # Use a single subquery instance to avoid duplication
+    matching_payment = Subquery(matching_payment_subquery)
+
+    # Annotate the Reservation with the matching payment details
+    reservations_with_payment = (reservations
+        .annotate(
+            total_received_in_cents=Sum("reservationpayment__payment__amount_in_cents", default=0),
+            likely_payment_id=Subquery(matching_payment_subquery.values("id"), output_field=IntegerField()),
+            likely_payment_other_name=Subquery(matching_payment_subquery.values("other_name"), output_field=CharField()),
+            likely_payment_other_account=Subquery(matching_payment_subquery.values("other_account"), output_field=CharField()),
+            likely_payment_amount_in_cents=Subquery(matching_payment_subquery.values("amount_in_cents"), output_field=IntegerField()),
+            likely_payment_src_id=Subquery(matching_payment_subquery.values("src_id"), output_field=CharField()),
+    ))
+
+    return reservations_with_payment

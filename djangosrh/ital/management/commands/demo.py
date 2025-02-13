@@ -5,11 +5,16 @@ from django.core.management.base import (
 )
 from django.urls import reverse
 
-from ...models import Event, Item, Reservation
+from ...models import Event, Item, Reservation, ReservationPayment
+from core.models import Payment
 from ...tests.test_models import fill_db
 
 class Command(BaseCommand):
     def make_db_empty(self):
+        for res_pay in ReservationPayment.objects.all():
+            res_pay.delete()
+        for pmnt in Payment.objects.all():
+            pmnt.delete()
         for evt in Event.objects.all():
             evt.delete()
         for it in Item.objects.all():
