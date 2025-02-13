@@ -82,6 +82,7 @@ class ReservationListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         if self.event is not None:
             context["event"] = self.event
+            context["total_count"] = self.event.occupied_seats()
         return context
 
 
