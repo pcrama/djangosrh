@@ -113,6 +113,9 @@ class Reservation(models.Model):
         item_id = item.id if isinstance(item, Item) else item
         return sum(it.count for it in self.reservationitemcount_set.filter(item_id=item_id))
 
+    def remaining_amount_due_in_cents(self) -> int:
+        return self.total_due_in_cents - self.reservationpayment_set.aggregate(sum=models.Sum("payment__amount_in_cents", default=0))['sum']
+
 
 class ReservationPayment(models.Model):
     reservation = models.ForeignKey(Reservation, on_delete=models.PROTECT)

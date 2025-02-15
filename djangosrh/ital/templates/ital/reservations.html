@@ -48,9 +48,15 @@
     <td>
       <a class="link-primary" href="{% url 'show_reservation' reservation.uuid %}">{{ reservation }}</a>
     </td>
-    <td class="ps-1 text-end">{{reservation.places}}</td>
+    <td class="ps-1 text-end">{{ reservation.places }}</td>
     <td class="ps-1 text-end">{{ reservation.total_due_in_cents|cents_to_euros }}</td>
     <td class="ps-1 text-end">{{ reservation.total_received_in_cents|cents_to_euros }}</td>
+    <td class="ps-1">{% if reservation.likely_payment_id %}<form method="POST" action="{% url 'send_payment_reception_confirmation' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="payment_id" value="{{ reservation.likely_payment_id }}">
+        <input type="hidden" name="reservation_id" value="{{ reservation.id }}">
+        <input type="submit" value="{{ reservation.likely_payment_other_name|default:reservation.likely_payment_other_account }}: {{ reservation.likely_payment_amount_in_cents|cents_to_euros }}"></form>{% endif %}
+    </td>
   </tr>
   {% endfor %}
 </table>

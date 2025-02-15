@@ -227,7 +227,12 @@ class IntegrationTestCases(TestCase):
                 Event.ItemSummary(id=5, display_text='<>Vegetarian<>', display_text_plural='P(Vegetarian)', total_count=1),
                 Event.ItemSummary(id=6, display_text='<>Tiramisu<>', display_text_plural='P(Tiramisu)', total_count=4),
                 Event.ItemSummary(id=7, display_text='<>Glace<>', display_text_plural='P(Glace)', total_count=1)])
-        
+
+    def test_Reservation_remaining_amount_due_in_cents(self):
+        self.assertEqual(self.reservations[0].remaining_amount_due_in_cents(), 7800)
+        self.assertEqual(self.reservations[1].remaining_amount_due_in_cents(), 2800)
+        self.assertEqual(self.reservations[2].remaining_amount_due_in_cents(), 2200)
+
 
 # Local Variables:
 # compile-command: "uv run python ../../manage.py test ital"

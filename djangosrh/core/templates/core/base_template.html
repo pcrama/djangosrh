@@ -49,6 +49,9 @@
               <a class="social-icon" href="https://www.youtube.com/@raphaeldagostino" target="_blank">
                 <i class="ri-youtube-line"></i></a></li></ul></div></div></nav>
     <section class="section-padding container">
+      {% for message in messages %}
+      <div class="alert {{ message.tags }}" role="alert">{{ message | safe }}</div>
+      {% endfor %}
       {% block content %}{% endblock %}
     </section>
     <section class="section-padding">

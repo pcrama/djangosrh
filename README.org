@@ -29,6 +29,15 @@ Run the server from the project directory:
   python djangosrh/manage.py runserver
 #+end_src
 
+Import production data dump into local DB:
+#+begin_src shell :exports code
+  gunzip --to-stdout ~/Downloads/dump.sql.gz \
+      | sed -ne '/django_/d' \
+            -e '/auth_/d' \
+            -e "/INSERT INTO public.ital_reservation VALUES/s/, '"'\([a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9]\)-\([a-f0-9][a-f0-9][a-f0-9][a-f0-9]\)-\([a-f0-9][a-f0-9][a-f0-9][a-f0-9]\)-\([a-f0-9][a-f0-9][a-f0-9][a-f0-9]\)-\([a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9]\)'"',/, '"'\1\2\3\4\5'"', /" \
+            -e 's/INSERT INTO public./INSERT INTO /p' \
+      | sqlite3 djangosrh/db.sqlite3
+#+end_src
 * Alwaysdata setup
 ** Application path
 =/home/<username>/= is prefilled, append =www/django1/djangosrh/djangosrh/wsgi.py=
@@ -43,6 +52,10 @@ Run the server from the project directory:
   POSTGRESQL_PASSWORD=...
   DJANGO_SECRET_KEY=...
   DJANGO_ALLOWED_HOSTS=*
+  EMAIL_HOST=ssl0.ovh.net
+  EMAIL_PORT=587
+  EMAIL_HOST_PASSWORD=...
+  EMAIL_HOST_USER=info@domain-you-use-with-ovh.be
 #+end_example
 
 ** Static paths
