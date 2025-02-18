@@ -1,0 +1,102 @@
+{% extends "core/base_template.html" %}
+{% load currency_filter %}
+{% block title %}Tickets for {{ form.event.name }}{% endblock %}
+{% block style %}
+div.tickets {
+    display: grid;
+    grid-template-columns: 38vw 10vw 38vw 10vw;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+div.tickets > div.ticket-left-col > div:nth-child(1) {
+    margin-top: auto;
+    margin-bottom: 0px;
+}
+
+div.tickets > div.ticket-left-col > div:nth-child(2) {
+    margin-top: auto;
+    margin-bottom: auto;
+}
+
+div.tickets > div.ticket-left-col > div:nth-child(3) {
+    margin-top: auto;
+    margin-bottom: 0px;
+    font-weight: bold;
+}
+
+div.tickets > div.ticket-left-col > div:nth-child(4) {
+    margin-top: 0px;
+    margin-bottom: auto;
+    font-variant-caps: small-caps;
+}
+
+div.tickets > div.ticket-left-col {
+    display: grid;
+    grid-template-rows: auto auto auto auto;
+    padding-left: 0.6cm;
+}
+
+div.tickets > div > img {
+    width: 95%;
+    position: relative;
+    left: -0.6cm;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+div.ticket-heading {
+    padding-top: 1ex;
+    font-weight: bold;
+    font-size: larger;
+}
+
+@media print {
+    nav { display: none; }
+    .fixed-top { display: none; }
+    .navbar { display: none; }
+    a.navbar-brand { display: none; }
+    footer { display: none; }
+    div.tickets {
+        grid-template-columns: 7cm 2.5cm 7cm 2.5cm;
+        page-break-after: auto;
+        page-break-before: avoid;
+        border-top: dimgray dashed 0.05cm;
+    }
+    div.tickets > div.ticket-left-col {
+        page-break-inside: avoid;
+        page-break-after: auto;
+        page-break-before: avoid;
+        grid-template-rows: 1cm 1cm 1cm 1cm;
+    }
+    div.tickets > div {
+        border-bottom: dimgray dashed 0.05cm;
+    }
+    div.tickets > div.ticket-left-col:nth-child(4n+3) {
+        border-left: dimgray dashed 0.05cm;
+    }
+    div.no-print-page-break {
+        page-break-inside: avoid;
+        page-break-after: avoid;
+    }
+}
+{% endblock %}
+{% block content %}
+{% for res in reservations %}
+<div class="no-print-page-break">
+  <div class="ticket-heading">{{ res.reservation.full_name }} {{ res.reservation.places|plural:"place" }}</div>
+  <div>{% if res.no_amount_due %}Total dû: {{ res.reservation.remaining_amount_due_in_cents|cents_to_euros }} pour {% endif %}{{ res.total_tickets|plural:"ticket" }}. {{ res.ticket_details }}</div>
+  <div class="tickets">
+    {% for itm in res.items %}
+    <div class="ticket-left-col">
+      <div>table n°</div>
+      <div>serveur</div>
+      <div>{{ itm.item__dish }}</div>
+      <div>{{ itm.item__short_text }}</div>
+    </div>
+    <div>{% if itm.item__image %}<img src="{{ MEDIA_URL }}{{ itm.item__image }}">{% endif %}</div>
+    {% endfor %}
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

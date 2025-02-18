@@ -1,5 +1,6 @@
 from collections import defaultdict
 from datetime import UTC, date, datetime, timedelta
+import itertools
 import time
 from typing import Any, Iterator, Mapping
 
@@ -21,8 +22,9 @@ from core.banking import cents_to_euros, format_bank_id, generate_payment_QR_cod
 
 from core.models import Payment
 from djangosrh import settings
-from .forms import ReservationForm
+from .forms import ItemTicketsGenerationForm, ReservationForm
 from .models import Choice, Civility, DishType, Event, Item, Reservation, ReservationItemCount, ReservationPayment
+from .templatetags.currency_filter import plural
 
 def index(request):
     return render(request, "ital/index.html")
@@ -206,3 +208,90 @@ def send_payment_reception_confirmation(request):
         messages.add_message(request, messages.INFO, f"Confirmation mail sent to {reservation.email}.")
 
     return HttpResponseRedirect(reverse("reservations"))
+
+
+@login_required
+def item_tickets(request, event_id: int):
+    event = get_object_or_404(Event, pk=event_id)
+    if event.disabled:
+        return render(request, "ital/event_disabled.html", context={"event": event})
+
+    if request.method == "POST":
+        form = ItemTicketsGenerationForm(event, data=request.POST)
+        if form.is_valid():
+            return render_generated_tickets(request, form)
+        else:
+            return render(
+                request,
+                "ital/item_tickets_form.html",
+                {"form": form}, status=422)
+
+    return render(request, "ital/item_tickets_form.html", {
+        "form": ItemTicketsGenerationForm(event)})
+
+
+@login_required
+def render_generated_tickets(request, form: ItemTicketsGenerationForm) -> HttpResponse:
+    return render(
+        request,
+        "ital/item_tickets.html",
+        {"form": form,
+         "reservations": list(create_full_ticket_list(form)),
+         "MEDIA_URL": settings.MEDIA_URL}
+    )
+
+
+def create_full_ticket_list(form: ItemTicketsGenerationForm) -> Iterator[Any]:
+    dish_names = {DishType.DT0STARTER: "Entrée", DishType.DT1MAIN: "Plat", DishType.DT2DESSERT: "Dessert"}
+    for r in form.event.reservation_set.order_by("last_name", "first_name"):
+        if not (tickets := create_tickets_for_one_reservation(r)):
+            continue
+        for itm in tickets["items"]:
+            form.decrease_item_count(itm["item_id"], itm["total_count"])
+            itm["item__dish"] = dish_names[itm["item__dish"]]
+        tickets["reservation"] = r
+        yield tickets
+    if all(cnt <= 0 for cnt in form.data.values()):
+        return
+    yield {
+        "reservation": {
+            "no_amount_due": True,
+            "full_name": "Tickets de réserve",
+        },
+        "total_tickets": sum(cnt for cnt in form.data.values() if cnt > 0),
+        "ticket_details": ', '.join(
+            plural(form.data[key], [itm.display_text, itm.display_text_plural])
+            for key, itm in form.reference_data.items()
+            if form.data[key] > 0),
+        "items": list(itertools.chain(*(itertools.repeat(
+            {
+            "item_id": val.id,
+            "item__short_text": (itm := Item.objects.get(pk=val.id)).short_text,
+            "item__display_text": itm.display_text,
+            "item__display_text_plural": itm.display_text_plural,
+            "item__image": itm.image,
+            "item__dish": dish_names[itm.dish],
+            }, form.data[key]) for key, val in form.reference_data.items()))),
+    }
+
+
+def create_tickets_for_one_reservation(r: Reservation) -> dict[str, int | str | list[dict[str, int | str]]]:
+    items = list(
+        r.reservationitemcount_set.order_by('item__dish', 'item_id')
+        .values(
+            "item_id",
+            "item__short_text",
+            "item__display_text",
+            "item__display_text_plural",
+            "item__image",
+            "item__dish",
+        )
+        .annotate(total_count=Sum("count"))
+    )
+    return {
+        'total_tickets': total_tickets,
+        'ticket_details': ', '.join(
+            plural(itm['total_count'], [itm['item__display_text'], itm['item__display_text_plural']])
+            for itm in items),
+        'items': items,
+    } if (total_tickets := sum(itm['total_count'] for itm in items)) > 0 else {}

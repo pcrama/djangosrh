@@ -4,13 +4,19 @@
 {% block content %}
 <div class="container">
   <div class="row">
-    <div class="col-sm-8">
+    <div class="col-sm-5">
       Il y a {{ event.reservation_set.count|plural:"réservation" }} pour {{ total_count|plural:"place réservée,places réservées" }}.
+    </div>
+    <div class="col-sm-2">
+      <a class="link-primary" href="{% url 'payments' %}">Gérer paiements</a>
     </div>
     <div class="col-sm-2">
       <a class="link-primary" href="{% url 'reservation_form' event.id %}">Nouvelle réservation</a>
     </div>
     <div class="col-sm-2">
+      <a class="link-primary" href="{% url 'item_tickets' event.id %}">Générer les tickets</a>
+    </div>
+    <div class="col-sm-1">
       <form action="{% url 'logout' %}" method="post">
         {% csrf_token %}
         <button type="submit">Log Out</button>

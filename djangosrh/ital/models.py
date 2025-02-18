@@ -29,7 +29,7 @@ class Event(models.Model):
     bank_account = models.CharField(max_length=32, default="BE00 0000 0000 0000")
     disabled = models.BooleanField(default=False)
     full_payment_confirmation_template = models.CharField(max_length=1024, default='<p>Hi,</p><p>Thank you for your payment for <a class="link-primary" href="%reservation_url%">your reservation</a>.</p><p>Greetings,<br>--&nbsp;<br>Signature</p>')
-    partial_payment_confirmation_template = models.CharField(max_length=1024, default='<p>Hi,</p><p>Thank you for your payment for <a class="link-primary" href="%reservation_url%">your reservation</a>.</p><p>You can wire the remaining %remaining_amount_in_euro% € to %organizer_name% (%bank_account%, organizer_bic%) with the communication <pre>%formatted_bank_id%</pre>.</p><p>Greetings,<br>--&nbsp;<br>Signature</p>')
+    partial_payment_confirmation_template = models.CharField(max_length=1024, default='<p>Hi,</p><p>Thank you for your payment for <a class="link-primary" href="%reservation_url%">your reservation</a>.</p><p>You can wire the remaining %remaining_amount_in_euro% € to %organizer_name% (%bank_account%, %organizer_bic%) with the communication <pre>%formatted_bank_id%</pre>.</p><p>Greetings,<br>--&nbsp;<br>Signature</p>')
     max_seats = models.IntegerField()
 
     def __str__(self):

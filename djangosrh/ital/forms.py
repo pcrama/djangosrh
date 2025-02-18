@@ -5,9 +5,10 @@ import itertools
 import operator
 import re
 import time
-from typing import Any, Callable
+from typing import Any, Callable, Iterator, Mapping
 
 from core.banking import generate_bank_id
+from .templatetags.currency_filter import plural
 
 from .models import Civility, Event, Item, Reservation, ReservationItemCount
 
@@ -176,3 +177,49 @@ class ReservationForm:
                 reservation_item_count.save()
                 reservation.reservationitemcount_set.add(reservation_item_count)
             return reservation
+
+
+class ItemTicketsGenerationForm:
+    errors: Mapping[str, list[str]]
+    data: Mapping[str, int]
+    was_validated: bool
+
+    @staticmethod
+    def _item_id_to_key(item_id: int) -> str:
+        return f"itm_gen_{item_id}"
+
+    def __init__(self, evt: Event, data=None):
+        self.errors = defaultdict(list)
+        self.event = evt
+        self.reference_data = {
+            self._item_id_to_key(itm.id): itm for itm in self.event.reservation_items()}
+        self.was_validated, self.data = (
+            False, {key: (val.total_count, val) for key, val in self.reference_data.items()}
+        ) if data is None else (True, self.validate_data(data, self.reference_data))
+
+    def validate_data(self, data: Mapping[str, str], ref_data: dict[str, Event.ItemSummary]) -> Mapping[str, int]:
+        result = defaultdict(int)
+        for key, itm in ref_data.items():
+            try:
+                count = int(data[key])
+            except Exception:
+                count = 0
+            result[key] = count
+            if count < itm.total_count:
+                self.errors[key].append(f"Il y a moins de tickets ({count}) que de réservations ({plural(itm.total_count, [itm.display_text, itm.display_text_plural])})")
+        return result
+
+    def is_valid(self) -> bool:
+        return self.was_validated and not any(err for err in self.errors.values())
+
+    def zip_values(self) -> Iterator[tuple[str, int, Event.ItemSummary, list[str]]]:
+        for key, val in self.reference_data.items():
+            yield key, self.data[key], val, self.errors[key]
+
+    def decrease_item_count(self, item_id: int, total_count: int) -> None:
+        key = self._item_id_to_key(item_id)
+        new_count = self.data[key] - total_count
+        if new_count < 0:
+            raise RuntimeError(
+                f"Not enough tickets, missing at least {-new_count} {self.reference_data[key]}")
+        self.data[key] = new_count
