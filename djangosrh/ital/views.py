@@ -1,3 +1,4 @@
+import csv
 from collections import defaultdict
 from datetime import UTC, date, datetime, timedelta
 import itertools
@@ -295,3 +296,31 @@ def create_tickets_for_one_reservation(r: Reservation) -> dict[str, int | str | 
             for itm in items),
         'items': items,
     } if (total_tickets := sum(itm['total_count'] for itm in items)) > 0 else {}
+
+
+@login_required
+def export_csv(request, event_id: int) -> HttpResponse:
+    event = get_object_or_404(Event, pk=event_id)
+    if event.disabled:
+        return render(request, "ital/event_disabled.html", context={"event": event})
+    reservation_items = event.reservation_items()
+    response = HttpResponse(
+        content_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="reservations.csv"'},
+    )
+    writer = csv.writer(response)
+    writer.writerow(["Nom", "Places", "Valeur", "Déjà payé", "Restant dû", *(
+        itm.column_header for itm in reservation_items), "Commentaire"])
+    # N+1 queries, so what... I won't have that many reservations anyway.
+    for res in event.reservation_set.order_by('last_name', 'first_name'):
+        total_due = res.total_due_in_cents
+        remaining = res.remaining_amount_due_in_cents()
+        writer.writerow([
+            res.full_name,
+            str(res.places),
+            cents_to_euros(total_due),
+            cents_to_euros(total_due - remaining),
+            cents_to_euros(remaining),
+            *(res.count_items(item) for item in reservation_items),
+            res.extra_comment.strip()])
+    return response

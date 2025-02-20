@@ -1,7 +1,9 @@
 from datetime import date, datetime, timezone
 from typing import Mapping
 
-from django.test import TestCase
+from django.contrib.auth.models import User
+from django.test import Client, TestCase
+from django.urls import reverse
 
 from core.models import Payment
 from ..views import get_reservations_with_likely_payments
@@ -127,6 +129,34 @@ class GetReservationsWithLikelyPayments003000300003_after_1st_payment_linked(
         super().setUp()
         ReservationPayment(reservation=self.reservations[2], payment=Payment.objects.get(src_id="2025-0001")).save()
 
+
+class GetExportCsvWithExampleList(TestCase):
+    user: User
+    test_url: str
+
+    def setUp(self):
+        super().setUp()
+        event, *_ = fill_db()
+        self.user = User.objects.create_user("john", "lennon@thebeatles.com", "johnpassword")
+        self.test_url = reverse('export_csv', kwargs={'event_id': event.id})
+
+    def test_no_login__redirects(self):
+        c = Client()
+        response = c.get(self.test_url, follow=True)
+        self.assertEqual(response.redirect_chain,
+                         [(f'/login?next={self.test_url}', 302),
+                          (f'/login/?next={self.test_url.replace("/", "%2F")}', 301)])
+        self.assertNotEqual(len(response.content), 0)
+
+    def test_after_login__lists_reservations(self):
+        c = Client()
+        c.force_login(self.user)
+        response = c.get(self.test_url, follow=False)
+        self.assertEqual(response.content.decode('utf8'),
+                         'Nom,Places,Valeur,Déjà payé,Restant dû,Tomate Mozza,Croquettes,Bolo,Scampis,Vegetarian,Tiramisu,Glace,Commentaire\r\n'
+                         'Priv Ate,1,22.00€,0.00€,22.00€,0,1,1,0,0,1,0,th¡rd\r\n'
+                         'Mme Lara Croft,3,28.00€,0.00€,28.00€,0,1,1,0,0,2,0,\r\n'
+                         'Mr Dupont,2,79.00€,1.00€,78.00€,2,1,0,1,1,1,1,First reservation\r\n')
 
 # Local Variables:
 # compile-command: "uv run python ../../manage.py test ital"

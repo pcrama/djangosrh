@@ -61,6 +61,7 @@ Import production data dump into local DB:
 ** Static paths
 #+begin_example
   /static=static
+  /media=media
 #+end_example
 
 ** Deployment actions

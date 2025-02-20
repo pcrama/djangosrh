@@ -4,17 +4,20 @@
 {% block content %}
 <div class="container">
   <div class="row">
-    <div class="col-sm-5">
-      Il y a {{ event.reservation_set.count|plural:"réservation" }} pour {{ total_count|plural:"place réservée,places réservées" }}.
-    </div>
-    <div class="col-sm-2">
-      <a class="link-primary" href="{% url 'payments' %}">Gérer paiements</a>
+    <div class="col-sm-3">
+      Il y a {{ event.reservation_set.count|plural:"réservation" }} pour {{ total_count|plural:"place" }}.
     </div>
     <div class="col-sm-2">
       <a class="link-primary" href="{% url 'reservation_form' event.id %}">Nouvelle réservation</a>
     </div>
     <div class="col-sm-2">
-      <a class="link-primary" href="{% url 'item_tickets' event.id %}">Générer les tickets</a>
+      <a class="link-primary" href="{% url 'payments' %}">Gérer paiements</a>
+    </div>
+    <div class="col-sm-2">
+      <a class="link-primary" href="{% url 'item_tickets' event.id %}">Générer tickets</a>
+    </div>
+    <div class="col-sm-2">
+      <a class="link-primary" href="{% url 'export_csv' event.id %}">Exporter listes</a>
     </div>
     <div class="col-sm-1">
       <form action="{% url 'logout' %}" method="post">
@@ -49,22 +52,33 @@
 </div>
 {% endif %}
 <table>
-  {% for reservation in reservations %}
-  <tr>
-    <td>
-      <a class="link-primary" href="{% url 'show_reservation' reservation.uuid %}">{{ reservation }}</a>
-    </td>
-    <td class="ps-1 text-end">{{ reservation.places }}</td>
-    <td class="ps-1 text-end">{{ reservation.total_due_in_cents|cents_to_euros }}</td>
-    <td class="ps-1 text-end">{{ reservation.total_received_in_cents|cents_to_euros }}</td>
-    <td class="ps-1">{% if reservation.likely_payment_id %}<form method="POST" action="{% url 'send_payment_reception_confirmation' %}" enctype="multipart/form-data">
-        {% csrf_token %}
-        <input type="hidden" name="payment_id" value="{{ reservation.likely_payment_id }}">
-        <input type="hidden" name="reservation_id" value="{{ reservation.id }}">
-        <input type="submit" value="{{ reservation.likely_payment_other_name|default:reservation.likely_payment_other_account }}: {{ reservation.likely_payment_amount_in_cents|cents_to_euros }}"></form>{% endif %}
-    </td>
-  </tr>
-  {% endfor %}
+  <thead>
+    <tr>
+      <th>Réservation</th>
+      <th class="text-end">Places</th>
+      <th class="text-end">Valeur</th>
+      <th class="text-end">Payé</th>
+      <th>Confirmer réception d'un paiement</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for reservation in reservations %}
+    <tr>
+      <td>
+        <a class="link-primary" href="{% url 'show_reservation' reservation.uuid %}">{{ reservation }}</a>
+      </td>
+      <td class="ps-1 text-end">{{ reservation.places }}</td>
+      <td class="ps-1 text-end">{{ reservation.total_due_in_cents|cents_to_euros }}</td>
+      <td class="ps-1 text-end">{{ reservation.total_received_in_cents|cents_to_euros }}</td>
+      <td class="ps-1">{% if reservation.likely_payment_id %}<form method="POST" action="{% url 'send_payment_reception_confirmation' %}" enctype="multipart/form-data">
+          {% csrf_token %}
+          <input type="hidden" name="payment_id" value="{{ reservation.likely_payment_id }}">
+          <input type="hidden" name="reservation_id" value="{{ reservation.id }}">
+          <input type="submit" value="{{ reservation.likely_payment_other_name|default:reservation.likely_payment_other_account }}: {{ reservation.likely_payment_amount_in_cents|cents_to_euros }}"></form>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
 </table>
 {% if page_obj.has_previous or page_obj.has_next %}
 <div class="pagination">
