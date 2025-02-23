@@ -65,6 +65,14 @@ class ReservationForm:
                     val = val_str
             return self.Input(
                 id=id, name=id, value=val, errors=errors(id) if self.was_validated else [], choice=None, item=None)
+        def _make_checkbox(id: str, default: bool, errors: Callable[[str], list[str]]) -> ReservationForm.Input:
+            return self.Input(
+                id=id, name=id,
+                value=self.data.get(id) == "yes" if id in self.data else default,
+                errors=errors(id) if self.was_validated else [],
+                choice=None,
+                item=None
+            )
         def _mandatory(id: str) -> list[str]:
             return [] if id in self.data else ["Mandatory field"]
         def _non_blank(id: str) -> list[str]:
@@ -93,7 +101,7 @@ class ReservationForm:
         self.last_name = _make_input("last_name", "", _non_blank)
         self.first_name = _make_input("first_name", Reservation.first_name.field.default, _any)
         self.email = _make_input("email", "", _mandatory_email)
-        self.accepts_rgpd_reuse = _make_input("accepts_rgpd_reuse", False, _any, functools.partial(operator.eq, "yes"))
+        self.accepts_rgpd_reuse = _make_checkbox("accepts_rgpd_reuse", False, _any)
         self.places = _make_input("places", 1, _mandatory_in_range(1, 50), int)
         self.extra_comment = _make_input("extra_comment", "", _any)
         self.validate_sum_groups()

@@ -34,6 +34,6 @@
   La commande des repas se fera à l'entrée: nous préférons le paiement mobile mais accepterons aussi le paiement en liquide.
 </p>
 {% endif %}
-<p><a class="link-primary" href="mailto:{{ reservation.event.contact_email }}">Contactez nous</a> si vous avez encore des questions.  Un tout grand merci pour votre présence le {{ reservation.event.date|french_date }}: le soutien de nos auditeurs nous est indispensable!</p>
+<p><a class="link-primary" href="mailto:{{ reservation.event.contact_email }}">Contactez-nous</a> si vous avez encore des questions.  Un tout grand merci pour votre présence le {{ reservation.event.date|french_date }}: le soutien de nos auditeurs nous est indispensable!</p>
 <p>Ajoutez <a class="link-primary" href="{% url 'show_reservation' reservation.uuid %}">cette page</a> à vos favoris ou scannez ce code QR pour suivre l'état actuel de votre réservation:<br>{{ page_qrcode|safe }}
 {% endblock %}

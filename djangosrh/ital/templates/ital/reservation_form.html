@@ -119,7 +119,7 @@ form#reservation_form_id div.has-error div.error-message { display: inline; }
   <div class="form-group">
     <small class="form-text text-muted">La Société Royale d&#8217;Harmonie de Braine-l&#8217;Alleud respecte votre vie privée. Les données de contact que vous nous communiquez dans ce formulaire seront uniquement utilisées dans le cadre de ce {{ form.event.name }}, à moins que vous nous donniez l&#8217;autorisation de les garder pour vous informer de nos concerts et autres fêtes dans le futur. Contactez <a class="link-primary" href="mailto:{{ form.event.contact_email }}">{{ form.event.contact_email }}</a> pour demander d&#8217;être retiré de nos fichiers.</small>
     <div class="form-check">
-      <input class="form-check-input" id="{{ form.accepts_rgpd_reuse.id }}" name="{{ form.accepts_rgpd_reuse.name }}" type="checkbox" value="">
+      <input class="form-check-input" id="{{ form.accepts_rgpd_reuse.id }}" name="{{ form.accepts_rgpd_reuse.name }}" type="checkbox" value="yes"{% if form.accepts_rgpd_reuse.value %}checked="checked"{% endif %}>
       <label for="{{ form.accepts_rgpd_reuse.id }}">Je désire être tenu au courant des activités futures de la SRH de Braine-l&#8217;Alleud et l&#8217;autorise à conserver mon nom et mon adresse email à cette fin.</label>
     </div>
   </div>
