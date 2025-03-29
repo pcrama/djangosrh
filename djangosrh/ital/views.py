@@ -250,6 +250,7 @@ def create_full_ticket_list(form: ItemTicketsGenerationForm) -> Iterator[Any]:
         for itm in tickets["items"]:
             form.decrease_item_count(itm["item_id"], itm["total_count"])
             itm["item__dish"] = dish_names[itm["item__dish"]]
+        tickets["items"] = list(itertools.chain(*(itertools.repeat(datdict, datdict["total_count"]) for datdict in tickets["items"])))
         tickets["reservation"] = r
         yield tickets
     if all(cnt <= 0 for cnt in form.data.values()):
