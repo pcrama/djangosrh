@@ -22,7 +22,8 @@ from . import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('ital/', include('ital.urls')),
+    path('ital/', include('ital.urls', namespace="ital")),
     path("", include("django.contrib.auth.urls")),
     path('core/', view=include('core.urls')),
+    path('concert/', view=include('concert.urls', namespace="concert")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

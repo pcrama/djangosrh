@@ -3,19 +3,18 @@
 {% block title %}{{ reservation.full_name }} - {{ reservation.event.name }}{% endblock %}
 {% block content %}
 <p>
-  Votre {% if items %}commande{% else %}réservation{% endif %} au nom de {{ reservation.full_name }} pour {{ reservation.places|plural:"place" }} le {{ reservation.event.date|french_date }} a été enregistrée.  Vous pouvez garder <a class="link-primary" href="{% url 'ital:show_reservation' reservation.uuid %}">cette page</a> dans vos favoris ou l'imprimer comme preuve de réservation.
+  Votre réservation au nom de {{ reservation.full_name }} pour {{ reservation.places|plural:"place" }} le {{ reservation.event.date|french_date }} a été enregistrée.  Vous pouvez garder <a class="link-primary" href="{% url 'concert:show_reservation' reservation.uuid %}">cette page</a> dans vos favoris ou l'imprimer comme preuve de réservation.
 </p>
-{% if items %}
 <ul>
-  {% for itm in items %}
-  <li>{{ itm.total_count|plural:itm.display_text_with_plural }}</li>
+  {% for chc in choices %}
+  <li>{{ chc.count|plural:chc.display_text_with_plural }}</li>
   {% endfor %}
 </ul>
 <p>
-  Merci de nous avoir informés à l'avance de votre commande.  Les tickets correspondant à votre commande seront à votre disposition à l'entrée.
+  Les tickets correspondant à votre commande seront à votre disposition à l'entrée.
   {% if remaining_amount_due_in_cents > 0 %}
-  Le prix total est de {{ reservation.total_due_in_cents|cents_to_euros }} pour le
-  repas{% if remaining_amount_due_in_cents != reservation.total_due_in_cents %}
+  Le prix total est de {{ reservation.total_due_in_cents|cents_to_euros }} pour votre
+  réservation{% if remaining_amount_due_in_cents != reservation.total_due_in_cents %}
   dont {{ remaining_amount_due_in_cents|cents_to_euros }} sont encore dûs
   {% endif %}.
   Nous vous saurions gré de déjà faire un virement pour cette somme avec la
@@ -29,11 +28,6 @@
   Merci d'avoir déjà réglé l'entièreté des {{ reservation.total_due_in_cents|cents_to_euros }} dûs.
   {% endif %}
 </p>
-{% else %}
-<p>
-  La commande des repas se fera à l'entrée: nous préférons le paiement mobile mais accepterons aussi le paiement en liquide.
-</p>
-{% endif %}
 <p><a class="link-primary" href="mailto:{{ reservation.event.contact_email }}">Contactez-nous</a> si vous avez encore des questions.  Un tout grand merci pour votre présence le {{ reservation.event.date|french_date }}: le soutien de nos auditeurs nous est indispensable!</p>
-<p>Ajoutez <a class="link-primary" href="{% url 'ital:show_reservation' reservation.uuid %}">cette page</a> à vos favoris ou scannez ce code QR pour suivre l'état actuel de votre réservation:<br>{{ page_qrcode|safe }}
+<p>Ajoutez <a class="link-primary" href="{% url 'concert:show_reservation' reservation.uuid %}">cette page</a> à vos favoris ou scannez ce code QR pour suivre l'état actuel de votre réservation:<br>{{ page_qrcode|safe }}
 {% endblock %}

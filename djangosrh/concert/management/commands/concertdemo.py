@@ -5,8 +5,8 @@ from django.core.management.base import (
 )
 from django.urls import reverse
 
-from ...models import Event, Item, Reservation, ReservationPayment
-from core.models import Payment
+from ...models import Event, Choice, Reservation
+from core.models import Payment, ReservationPayment
 from ...tests.test_models import fill_db
 
 class Command(BaseCommand):
@@ -17,7 +17,7 @@ class Command(BaseCommand):
             pmnt.delete()
         for evt in Event.objects.all():
             evt.delete()
-        for it in Item.objects.all():
+        for it in Choice.objects.all():
             it.delete()
         for res in Reservation.objects.all():
             res.delete()
@@ -25,4 +25,4 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.make_db_empty()
         event, *_ = fill_db()
-        print("http://localhost:8000" + reverse("reservation_form", kwargs={"event_id": event.id}))
+        print("http://localhost:8000" + reverse("concert:reservation_form", kwargs={"event_id": event.id}))

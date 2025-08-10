@@ -26,6 +26,6 @@
     <div class="col-sm-6">{{ form.password }}</div>
 </div>
 <div class="row"><div class="col-sm-12"><input type="submit" value="login"></div></div>
-<input type="hidden" name="next" value="{% url 'reservations' %}">
+<input type="hidden" name="next" value="{{ next }}">
 </form>
 {% endblock %}

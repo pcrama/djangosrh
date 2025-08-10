@@ -88,7 +88,7 @@ form#reservation_form_id div.has-error div.error-message { display: inline; }
       updatePrice();
   });
 </script>
-<form id="reservation_form_id" action="{% url 'ital:reservation_form' form.event.id %}" method="post">
+<form id="reservation_form_id" action="{% url 'concert:reservation_form' form.event.id %}" method="post">
   {% csrf_token %}
   {% if form.was_validated and form.errors %}
   <div class="row invalid-feedback" style="display: inline;">{% for err in form.errors %}{{ err }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</div>
@@ -123,72 +123,18 @@ form#reservation_form_id div.has-error div.error-message { display: inline; }
       <label for="{{ form.accepts_rgpd_reuse.id }}">Je désire être tenu au courant des activités futures de la SRH de Braine-l&#8217;Alleud et l&#8217;autorise à conserver mon nom et mon adresse email à cette fin.</label>
     </div>
   </div>
-  <div class="form-group row">
-    <label for="{{ form.extra_comment.id }}">Commentaire (p.ex. pour le placement si vous venez avec un autre groupe)</label><br>
-    <input class="form-control {% if form.was_validated %}{% if form.extra_comment.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %}" id="{{ form.extra_comment.id }}" name="{{ form.extra_comment.name }}" type="text" value="{{ form.extra_comment.value }}">
-  </div>
-  <div class="form-group row">
-    <label class="col-lg-3 col-form-label" for="{{ form.places.id }}">Nombre de places pour le repas</label>
-    <div class="col-lg-1">
-      <input class="form-control {% if form.was_validated %}{% if form.places.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %}" id="{{ form.places.id }}" max="50" min="1" name="{{ form.places.name }}" type="text" inputmode="numeric" pattern="\d\d?" value="{{ form.places.value }}">
-    </div>
-  </div>
-  {% if form.all_dishes and form.single_items %}
   <div class="container">
-    <div class="row"><p class="text-primary text-center"><b>À la carte</b></p></div>
-    <div class="row">
-      {% for dish_type in form.all_dishes %}
-      <div class="col-sm-4 border-right">
-        <div class="container border-right">
-          {% for key, input_fields in form.single_items.items %}{% if key == dish_type %}{% for inpt in input_fields %}
-          <div class="form-group row no-gutters">
-            <div style="width: calc(100% - {% if form.was_validated %}4em{% else %}3em{% endif %} - 0.3em)">
-              {% if inpt.errors %}<details class="text-white bg-danger"><summary>{% endif %}<label class="form-label" for="{{ inpt.id }}">{{ inpt.item }} {{ inpt.choice.price_in_cents|cents_to_euros }}</label>{% if inpt.errors %}</summary>{% for err in inpt.errors %}{% if not forloop.first %}<br>{% endif %}{{ err }}{% endfor %}</details>{% endif %}
-            </div>
-            <div style="width: {% if form.was_validated %}4em{% else %}3em{% endif %};">
-              <input class="{% if form.was_validated %}{% if inpt.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %} form-control" style="width: {% if form.was_validated %}4em{% else %}3em{% endif %}; padding-left: 0.1em; padding-right: 0.1em" id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="text" inputmode="numeric" pattern="\d\d?">
-            </div>
-          </div>
-          {% endfor %}{% endif %}{% endfor %}
-        </div>
+    {% for inpt in form.choices %}
+    <div class="form-group row no-gutters">
+      <div style="width: {% if form.was_validated %}4em{% else %}3em{% endif %};">
+        <input class="{% if form.was_validated %}{% if inpt.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %} form-control" style="width: {% if form.was_validated %}4em{% else %}3em{% endif %}; padding-left: 0.1em; padding-right: 0.1em" id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="text" inputmode="numeric" pattern="\d\d?">
       </div>
-      <!-- Add horizontal separator only when columns stack (below `sm` breakpoint) -->
-      {% if not forloop.last %}
-      <div class="col-12 d-sm-none"><hr></div>
-      {% endif %}
-      {% endfor %}
+      <div style="width: calc(100% - {% if form.was_validated %}4em{% else %}3em{% endif %} - 0.3em)">
+        {% if inpt.errors %}<details class="text-white bg-danger"><summary>{% endif %}<label class="form-label" for="{{ inpt.id }}">{{ inpt.choice }} {{ inpt.choice.price_in_cents|cents_to_euros }}</label>{% if inpt.errors %}</summary>{% for err in inpt.errors %}{% if not forloop.first %}<br>{% endif %}{{ err }}{% endfor %}</details>{% endif %}
+      </div>
     </div>
-  </div>
-  {% endif %}
-  {% for pack in form.packs %}
-  <div class="container border-top border-primary">
-    <div class="row"><span class="font-weight-bold text-primary text-center"><b>{{ pack.choice }}</b> {{ pack.choice.price_in_cents|cents_to_euros }}</span></div>
-    {% if pack.errors %}<div class="row">{% for err in pack.errors %}<div class="form-text text-center bg-danger text-white">{{ err }}</div>{% endfor %}</div>{% endif %}
-    <div class="row no-gutters">
-      {% for dish_type in form.all_dishes %}
-      <div class="col-sm-4" id="{{ pack.id }}_{{ dish_type }}">
-        <div class="container">
-          <div class="row error-message invalid-feedback">La somme de cette colonne doit correspondre au nombre total de plats.</div>
-          {% for key, input_fields in pack.items.items %}{% if key == dish_type %}{% for inpt in input_fields %}
-          <div class="form-group row no-gutters">
-            <div style="display: flex; width: calc(100% - {% if form.was_validated %}4em{% else %}3em{% endif %} - 0.3em)">
-              {% if inpt.errors %}<details class="bg-danger text-white"><summary>{% endif %}<label class="form-label" for="{{ inpt.id }}">{{ inpt.item }}</label>{% if inpt.errors %}</summary>{% for err in inpt.errors %}{% if not forloop.first %}<br>{% endif %}{{ err }}{% endfor %}</details>{% endif %}
-            </div>
-            <div style="width: {% if form.was_validated %}4em{% else %}3em{% endif %};">
-              <input class="padding-x-0 {% if form.was_validated %}{% if inpt.errors or pack.errors %}is-invalid{% else %}is-valid{% endif %}{% endif %} form-control" style="width: {% if form.was_validated %}4em{% else %}3em{% endif %}; padding-left: 0.1em; padding-right: 0.1em;" id="{{ inpt.id }}" name="{{ inpt.name }}" value="{{ inpt.value }}" type="text" inputmode="numeric" pattern="\d\d?">
-            </div>
-          </div>
-          {% endfor %}{% endif %}{% endfor %}
-        </div>
-      </div>
-      <!-- Add horizontal separator only when columns stack (below `sm` breakpoint) -->
-      {% if not forloop.last %}
-      <div class="col-12 d-sm-none"><hr></div>
-      {% endif %}
     {% endfor %}
-    </div>
   </div>
-  {% endfor %}
   {% if form.was_validated and form.errors %}
   <div class="row invalid-feedback" style="display: inline;">{% for err in form.errors %}{{ err }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</div>
   {% endif %}

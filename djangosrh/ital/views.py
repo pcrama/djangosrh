@@ -1,16 +1,17 @@
 import csv
-from collections import defaultdict
 from datetime import UTC, date, datetime, timedelta
 import itertools
 import time
-from typing import Any, Iterator, Mapping
+from collections.abc import Iterator
+from typing import Any, Mapping
 
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import login_required
 from django.core.mail import EmailMultiAlternatives
 from django.db.models import Exists, OuterRef, Prefetch, QuerySet, Subquery, Sum, IntegerField, CharField
-from django.http import HttpResponse, Http404, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils import html
@@ -21,10 +22,10 @@ from qrcode.image.svg import SvgPathFillImage
 
 from core.banking import cents_to_euros, format_bank_id, generate_payment_QR_code_content
 
-from core.models import Payment
-from djangosrh import settings
+from core.models import Payment, ReservationPayment, get_reservations_with_likely_payments
+from core.views import aux_send_payment_reception_confirmation
 from .forms import ItemTicketsGenerationForm, ReservationForm
-from .models import Choice, Civility, DishType, Event, Item, Reservation, ReservationItemCount, ReservationPayment
+from .models import Choice, DishType, Event, Item, Reservation, ReservationItemCount
 from .templatetags.currency_filter import plural
 
 def index(request):
@@ -123,7 +124,7 @@ def reservation_form(request, event_id: int) -> HttpResponse:
         if reservation := form.save():
             # Store reservation info in the session
             request.session["recent_reservation"] = {"uuid": str(reservation.uuid), "time": time.time()}
-            return HttpResponseRedirect(reverse("show_reservation", kwargs={"uuid": reservation.uuid}))
+            return HttpResponseRedirect(reverse("ital:show_reservation", kwargs={"uuid": reservation.uuid}))
         else:
             return render(
                 request,
@@ -133,82 +134,9 @@ def reservation_form(request, event_id: int) -> HttpResponse:
         "form": ReservationForm(event)})
 
 
-def get_reservations_with_likely_payments(min_date_received: date, reservations: QuerySet):
-    # Subquery to get the payment with the lowest bank_ref that matches the constraints
-    matching_payment_subquery = (
-        Payment.objects.filter(
-            srh_bank_id=OuterRef("bank_id"),
-            status="Accepté",
-            active=True,
-            date_received__gt=min_date_received,
-        )
-        .exclude(
-            id__in=ReservationPayment.objects.values_list("payment_id", flat=True)
-        )
-        .order_by("bank_ref")  # Order by lowest bank_ref
-        [:1]
-    )
-
-    # Use a single subquery instance to avoid duplication
-    matching_payment = Subquery(matching_payment_subquery)
-
-    # Annotate the Reservation with the matching payment details
-    reservations_with_payment = (reservations
-        .annotate(
-            total_received_in_cents=Sum("reservationpayment__payment__amount_in_cents", default=0),
-            likely_payment_id=Subquery(matching_payment_subquery.values("id"), output_field=IntegerField()),
-            likely_payment_other_name=Subquery(matching_payment_subquery.values("other_name"), output_field=CharField()),
-            likely_payment_other_account=Subquery(matching_payment_subquery.values("other_account"), output_field=CharField()),
-            likely_payment_amount_in_cents=Subquery(matching_payment_subquery.values("amount_in_cents"), output_field=IntegerField()),
-            likely_payment_src_id=Subquery(matching_payment_subquery.values("src_id"), output_field=CharField()),
-    ))
-
-    return reservations_with_payment
-
-
 @login_required
-def send_payment_reception_confirmation(request):
-    if request.method != "POST":
-        return HttpResponseRedirect(reverse("reservations"))
-
-    payment = get_object_or_404(Payment, pk=request.POST["payment_id"])
-    reservation = get_object_or_404(Reservation, pk=request.POST["reservation_id"])
-    event = reservation.event
-
-    reservation_payment = ReservationPayment(payment=payment, reservation=reservation, confirmation_sent_timestamp=None)
-    reservation_payment.save()
-
-    template = (event.full_payment_confirmation_template
-                if (remaining_amount_due_in_cents := reservation.remaining_amount_due_in_cents()) <= 0
-                else event.partial_payment_confirmation_template)
-    for key,val in (("organizer_name", html.escape(event.organizer_name)),
-                    ("organizer_bic", html.escape(event.organizer_bic)),
-                    ('bank_account', html.escape(event.bank_account)),
-                    ('reservation_url', request.build_absolute_uri(reverse("show_reservation", kwargs={"uuid": reservation.uuid}))),
-                    ('formatted_bank_id', html.escape(format_bank_id(reservation.bank_id))),
-                    ('remaining_amount_in_euro', html.escape(cents_to_euros(remaining_amount_due_in_cents))),
-                    ):
-        template = template.replace(f"%{key}%", val)
-
-    msg = EmailMultiAlternatives(
-        f"Merci pour votre paiement pour le {event.name}",
-        "Please see the attached HTML message. Veuillez lire le message HTML joint, svp.",
-        settings.EMAIL_HOST_USER,
-        [reservation.email],
-        cc=[event.contact_email],
-        reply_to=[event.contact_email])
-    msg.attach_alternative(template, "text/html")
-
-    try:
-        msg.send()
-    except Exception as e:
-        messages.add_message(request, messages.ERROR, f"Unable to send confirmation mail to {reservation.email}: {e}. {template}")
-    else:
-        reservation_payment.confirmation_sent_timestamp = datetime.now(tz=UTC)
-        reservation_payment.save()
-        messages.add_message(request, messages.INFO, f"Confirmation mail sent to {reservation.email}.")
-
-    return HttpResponseRedirect(reverse("reservations"))
+def send_payment_reception_confirmation(request) -> HttpResponseRedirect:
+    return aux_send_payment_reception_confirmation(request, "ital:reservations", "ital:show_reservation")
 
 
 @login_required

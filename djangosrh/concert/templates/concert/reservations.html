@@ -8,17 +8,16 @@
       Il y a {{ event.reservation_set.count|plural:"réservation" }} pour {{ total_count|plural:"place" }}.
     </div>
     <div class="col-sm-2">
-      <a class="link-primary" href="{% url 'ital:reservation_form' event.id %}">Nouvelle réservation</a>
+      <a class="link-primary" href="{% url 'concert:reservation_form' event.id %}">Nouvelle réservation</a>
     </div>
     <div class="col-sm-2">
       <a class="link-primary" href="{% url 'payments' %}">Gérer paiements</a>
     </div>
+    {% comment %}
     <div class="col-sm-2">
-      <a class="link-primary" href="{% url 'ital:item_tickets' event.id %}">Générer tickets</a>
+      <a class="link-primary" href="{% url 'concert:export_csv' event.id %}">Exporter listes</a>
     </div>
-    <div class="col-sm-2">
-      <a class="link-primary" href="{% url 'ital:export_csv' event.id %}">Exporter listes</a>
-    </div>
+    {% endcomment %}
     <div class="col-sm-1">
       <form action="{% url 'logout' %}" method="post">
         {% csrf_token %}
@@ -65,12 +64,12 @@
     {% for reservation in reservations %}
     <tr>
       <td>
-        <a class="link-primary" href="{% url 'ital:show_reservation' reservation.uuid %}">{{ reservation }}</a>
+        <a class="link-primary" href="{% url 'concert:show_reservation' reservation.uuid %}">{{ reservation }}</a>
       </td>
       <td class="ps-1 text-end">{{ reservation.places }}</td>
       <td class="ps-1 text-end">{{ reservation.total_due_in_cents|cents_to_euros }}</td>
       <td class="ps-1 text-end">{{ reservation.total_received_in_cents|cents_to_euros }}</td>
-      <td class="ps-1">{% if reservation.likely_payment_id %}<form method="POST" action="{% url 'ital:send_payment_reception_confirmation' %}" enctype="multipart/form-data">
+      <td class="ps-1">{% if reservation.likely_payment_id %}<form method="POST" action="{% url 'concert:send_payment_reception_confirmation' %}" enctype="multipart/form-data">
           {% csrf_token %}
           <input type="hidden" name="payment_id" value="{{ reservation.likely_payment_id }}">
           <input type="hidden" name="reservation_id" value="{{ reservation.id }}">

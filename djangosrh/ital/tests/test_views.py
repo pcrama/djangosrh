@@ -5,14 +5,13 @@ from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from core.models import Payment
-from ..views import get_reservations_with_likely_payments
+from core.models import Payment, ReservationPayment
+from core.models import get_reservations_with_likely_payments
 from ..models import (
     Choice,
     Event,
     Item,
     Reservation,
-    ReservationPayment,
 )
 
 from .test_models import fill_db
@@ -138,7 +137,7 @@ class GetExportCsvWithExampleList(TestCase):
         super().setUp()
         event, *_ = fill_db()
         self.user = User.objects.create_user("john", "lennon@thebeatles.com", "johnpassword")
-        self.test_url = reverse('export_csv', kwargs={'event_id': event.id})
+        self.test_url = reverse('ital:export_csv', kwargs={'event_id': event.id})
 
     def test_no_login__redirects(self):
         c = Client()

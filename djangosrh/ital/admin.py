@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Event, Choice, Item, Reservation, ReservationItemCount, ReservationPayment
+from .models import Event, Choice, Item, Reservation, ReservationItemCount
 
 # Register your models here.
 admin.site.register(Event)
@@ -11,4 +11,4 @@ class ItemAdmin(admin.ModelAdmin):
 
 admin.site.register(Reservation)
 admin.site.register(ReservationItemCount)
-admin.site.register(ReservationPayment)
+

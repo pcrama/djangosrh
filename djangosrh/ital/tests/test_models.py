@@ -2,16 +2,14 @@ from datetime import date, datetime, timezone
 
 from django.test import TestCase
 
-from core.models import Payment
+from core.models import Civility, Payment, ReservationPayment
 from ..models import (
     Choice,
-    Civility,
     DishType,
     Event,
     Item,
     Reservation,
     ReservationItemCount,
-    ReservationPayment,
 )
 
 

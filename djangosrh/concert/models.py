@@ -1,91 +1,77 @@
 from collections import namedtuple
 from collections.abc import Iterator
+from random import choices
 import uuid
 
 from django.db import models
 
-from core.models import BaseEvent, BaseReservation, Civility, Payment
-
-
-class DishType(models.TextChoices):
-    DT0STARTER = "dt0starter"
-    DT1MAIN = "dt1main"
-    DT2DESSERT = "dt2dessert"
+from core.models import BaseReservation, BaseEvent
 
 
 class Event(BaseEvent):
     class Meta:
-        # because I want Choice to link to "ital" Events, not to BaseEvents where they could also be "concert" Events:
+        # because I want Choice to link to "concert" Events, not to BaseEvents where they could also be "ital" Events:
         proxy = False
     base_event_ptr = models.OneToOneField(BaseEvent,
                                           on_delete=models.CASCADE,
                                           parent_link=True,
                                           primary_key=True,
-                                          related_name="%(app_label)s_%(class)s_related",
+                                          related_name="%(class)s_set",
                                           related_query_name="%(app_label)s_%(class)ss")
 
     def occupied_seats(self) -> int:
-        return self.reservation_set.aggregate(models.Sum("places", default=0))["places__sum"]
+        return (
+            ReservationChoiceCount.objects
+            .filter(reservation__event=self)
+            .aggregate(total=models.Sum("count"))["total"] or 0
+        )
 
-    ItemSummary = namedtuple("ItemSummary", "id,display_text,display_text_plural,column_header,total_count")
-
-    def reservation_items(self) -> list[ItemSummary]:
+    ChoiceSummary = namedtuple("ChoiceSummary", "id,display_text,display_text_plural,column_header,total_count")
+    def reservation_choices(self) -> list[ChoiceSummary]:
         return list(
-            self.ItemSummary(
-                id=itm["item__id"],
-                display_text=itm["item__display_text"],
-                display_text_plural=itm["item__display_text_plural"],
-                column_header=itm["item__column_header"],
+            self.ChoiceSummary(
+                id=itm["choice__id"],
+                display_text=itm["choice__display_text"],
+                display_text_plural=itm["choice__display_text_plural"],
+                column_header=itm["choice__column_header"],
                 total_count=itm["total_count"]
             ) for itm in
-        ReservationItemCount.objects
+        ReservationChoiceCount.objects
         .filter(reservation__event_id=self.id)
-        .values("item__display_text", "item__id", "item__display_text", "item__display_text_plural", "item__column_header")
+        .values("choice__display_text", "choice__id", "choice__display_text", "choice__display_text_plural", "choice__column_header")
         .annotate(total_count=models.Sum("count", default=0))
-        .order_by("item__dish", "item__id")
+        .order_by("choice__id")
     )
 
 
 class Choice(models.Model):
-    "What a customer chooses, can be 1 or more items grouped together (e.g. a starter/main dish/dessert pack)"
-    display_text = models.CharField(max_length=200)
+    "What a customer chooses"
     price_in_cents = models.PositiveIntegerField()
     available_in = models.ForeignKey(
         Event,
         on_delete=models.CASCADE,
         related_name="%(class)s_set",
         related_query_name="%(app_label)s_%(class)ss")
-
-    def __str__(self):
-        return self.display_text
-
-
-class Item(models.Model):
     display_text = models.CharField(max_length=200, blank=False)
     display_text_plural = models.CharField(max_length=200, blank=False)
     column_header = models.CharField(max_length=200, blank=False)
-    short_text = models.CharField(max_length=200, blank=False)
-    dish = models.CharField(max_length=10, choices=DishType)
-    choices = models.ManyToManyField(Choice)
-    image = models.ImageField(upload_to='images/', null=True, blank=True)
 
     def __str__(self):
         return self.display_text
 
 
-class ReservationItemCount(models.Model):
+class ReservationChoiceCount(models.Model):
     count = models.IntegerField()
     choice = models.ForeignKey(Choice, on_delete=models.CASCADE)
-    item = models.ForeignKey(Item, on_delete=models.CASCADE)
     reservation = models.ForeignKey("Reservation", on_delete=models.CASCADE)
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['choice_id', 'item_id', 'reservation_id'], name='%(app_label)s_%(class)s_reservation*item*choice'),
+            models.UniqueConstraint(fields=['choice_id', 'reservation_id'], name='%(app_label)s_%(class)s_reservation*choice'),
             # TODO: constrain all choices to be for the same event
         ]
 
     def __repr__(self):
-        return f"<ReservationItemCount {self.id}, {self.count}*{self.item} from {self.choice}>"
+        return f"<ReservationChoiceCount {self.id}, {self.count}* from {self.choice}>"
 
 
 class Reservation(BaseReservation):
@@ -93,19 +79,23 @@ class Reservation(BaseReservation):
                                                 on_delete=models.CASCADE,
                                                 parent_link=True,
                                                 primary_key=True,
-                                                related_name="%(app_label)s_%(class)s_related",
+                                                related_name="%(class)s_set",
                                                 related_query_name="%(app_label)s_%(class)ss")
     event = models.ForeignKey("Event",
                               on_delete=models.CASCADE,
                               related_name="%(class)s_set",
                               related_query_name="%(app_label)s_%(class)ss")
-    places = models.PositiveIntegerField()
 
-    def count_items(self, item: Item|int) -> int:
-        item_id = item.id if isinstance(item, Item) else item
-        return sum(it.count for it in self.reservationitemcount_set.filter(item_id=item_id))
+    class Meta:
+        # Specify a unique related name for reverse access
+        verbose_name = "Réservation concert"
+        verbose_name_plural = "Réservations concert"
 
     def save(self, **kwargs):
         if not hasattr(self, 'base_event') or self.base_event is None:
             self.base_event = self.event.base_event_ptr
         super().save(**kwargs)
+
+    @property
+    def places(self) -> int:
+        return self.reservationchoicecount_set.aggregate(models.Sum('count')).get('count__sum', 0)
