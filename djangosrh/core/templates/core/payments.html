@@ -48,7 +48,7 @@
     </thead>
     <tbody>
       {% for payment in payments %}
-      <tr>
+      <tr {% if payment.status != 'Accepté' %}class="table-danger"{% endif %}>
         <td>{{ payment.src_id }}</td>
         <td><div class="d-flex justify-content-between"><div>{{ payment.other_name }} {{ payment.other_account }}</div><div>{{ payment.comment }}</div></td>
         <td class="ps-1 text-end">{{ payment.amount_in_cents|cents_to_euros }}</td>
