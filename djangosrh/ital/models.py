@@ -129,4 +129,4 @@ class ReservationPayment(models.Model):
     confirmation_sent_timestamp = models.DateTimeField(null=True)
 
     class Meta:
-        constraints = [models.UniqueConstraint("payment", name="unique_payment")]
+        constraints = [models.UniqueConstraint("payment", name="%(app_label)s_%(class)s_unique_payment")]
