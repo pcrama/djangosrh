@@ -92,8 +92,8 @@ class ReservationPayment(models.Model):
     payment = models.OneToOneField(Payment, on_delete=models.PROTECT)
     confirmation_sent_timestamp = models.DateTimeField(null=True)
 
-    # class Meta:
-    #     constraints = [models.UniqueConstraint("payment", name="%(app_label)s_%(class)s_unique_payment")]
+    class Meta:
+        constraints = [models.UniqueConstraint("payment", name="%(app_label)s_%(class)s_unique_payment")]
 
 
 def get_reservations_with_likely_payments(min_date_received: date, reservations: models.QuerySet):
