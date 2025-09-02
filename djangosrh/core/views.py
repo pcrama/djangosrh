@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import login_required
 from django.core.mail import EmailMultiAlternatives
-from django.db.models import Sum
+from django.db.models import DateTimeField, OuterRef, Subquery, Sum
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -38,7 +38,13 @@ class PaymentListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         unordered_set = Payment.objects.filter(active=True) if self.only_active else Payment.objects
         order_by = self.order_by.lower()
-        return unordered_set.order_by(('' if order_by == self.order_by else '-') + order_by)
+        confirmation_date_subquery = ReservationPayment.objects.filter(
+            payment=OuterRef("pk")
+        ).values("confirmation_sent_timestamp")[:1]
+        queryset = unordered_set.annotate(
+            confirmation_date=Subquery(confirmation_date_subquery, output_field=DateTimeField())
+        )
+        return queryset.order_by(('' if order_by == self.order_by else '-') + order_by)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

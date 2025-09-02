@@ -43,6 +43,7 @@
           </div><div class="text-center"> &mdash; </div><div class="text-right">
             <a class="link-primary" href="?order_by={% if order_by == 'comment' %}COMMENT{% else %}comment{% endif %}&only_active={{ only_active }}&paginate_by={{ paginate_by }}">Communication{% if order_by == 'COMMENT' %}↓{% elif order_by == 'comment' %}↑{% endif %}</a></div></div></td>
         <td><a class="link-primary" href="?order_by={% if order_by == 'amount_in_cents' %}AMOUNT_IN_CENTS{% else %}amount_in_cents{% endif %}&only_active={{ only_active }}&paginate_by={{ paginate_by }}">Montant{% if order_by == "AMOUNT_IN_CENTS" %}↓{% elif order_by == "amount_in_cents" %}↑{% endif %}</a></td>
+        <td>Confirmé?</td>
         <td>&nbsp;</td>
       </tr>
     </thead>
@@ -52,6 +53,7 @@
         <td>{{ payment.src_id }}</td>
         <td><div class="d-flex justify-content-between"><div>{{ payment.other_name }} {{ payment.other_account }}</div><div>{{ payment.comment }}</div></td>
         <td class="ps-1 text-end">{{ payment.amount_in_cents|cents_to_euros }}</td>
+        <td>{% if payment.confirmation_date %}{{ payment.confirmation_date }}{% else %}Non{% endif %}</td>
         <td>
           <form method="post" action="{% url 'toggle_payment_active_status' %}">
             {% csrf_token %}

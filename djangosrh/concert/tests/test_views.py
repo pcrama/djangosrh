@@ -216,6 +216,18 @@ class ReservationList(AdminTestCase):
         response = self.client.get(self.test_url, follow=False)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "concert/reservations.html")
+        self.assertEqual(
+            [res.likely_payment_id for res in response.context["object_list"]],
+            [Payment.objects.get(src_id="2025-09123").id,
+             None,
+             Payment.objects.get(src_id="2025-0901").id])
+
+    def test_after_login__404_if_no_such_event(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("concert:reservations") + "?event_id=Does-NOT-exist", follow=False)
+        self.assertEqual(response.status_code, 404)
+        response = self.client.get(reverse("concert:reservations") + "?event_id=-9999", follow=False)
+        self.assertEqual(response.status_code, 404)
 
 
 class SendPaymentReceptionConfirmation(AdminTestCase):
@@ -283,7 +295,7 @@ class SendPaymentReceptionConfirmation(AdminTestCase):
         self.assertIsNotNone(ReservationPayment.objects.get(payment_id=self.payment.id))
 
 
-class GetReservationsWithLikelyPayments001000100001_after_1st_payment_linked(TestCase):
+class GetReservationsWithLikelyPayments091000100001_after_1st_payment_linked(TestCase):
     event: Event
     choices: list[Choice]
     reservations: list[Reservation]
@@ -297,16 +309,20 @@ class GetReservationsWithLikelyPayments001000100001_after_1st_payment_linked(Tes
         self.event, self.choices, self.reservations = fill_db()
 
     def test_get_reservations_with_likely_payments(self):
-        reservations = list(get_reservations_with_likely_payments(date(2025, 2, 12), Reservation.objects))
+        reservations = list(get_reservations_with_likely_payments(date(2025, 9, 1), Reservation.objects))
         res1 = next(res for res in reservations if res.bank_id == self.reservations[0].bank_id)
+        if self.expected_src_id:
+            self.assertEqual(res1.likely_payment_id, Payment.objects.get(src_id=self.expected_src_id).id)
+        else:
+            self.assertIsNone(res1.likely_payment_id)
         self.assertEqual(res1.likely_payment_other_account, self.expected_account)
         self.assertEqual(res1.likely_payment_other_name, self.expected_name)
         self.assertEqual(res1.likely_payment_amount_in_cents, self.expected_amount_in_cents)
         self.assertEqual(res1.likely_payment_src_id, self.expected_src_id)
 
 
-class GetReservationsWithLikelyPayments001000100001_after_2nd_payment_linked(
-        GetReservationsWithLikelyPayments001000100001_after_1st_payment_linked):
+class GetReservationsWithLikelyPayments091000100001_after_2nd_payment_linked(
+        GetReservationsWithLikelyPayments091000100001_after_1st_payment_linked):
     event: Event
     choices: list[Choice]
     reservations: list[Reservation]
@@ -320,8 +336,8 @@ class GetReservationsWithLikelyPayments001000100001_after_2nd_payment_linked(
         ReservationPayment(reservation=self.reservations[0], payment=Payment.objects.get(src_id="2025-09123")).save()
 
 
-class GetReservationsWithLikelyPayments001000100001_after_3rd_payment_linked(
-        GetReservationsWithLikelyPayments001000100001_after_2nd_payment_linked):
+class GetReservationsWithLikelyPayments091000100001_after_3rd_payment_linked(
+        GetReservationsWithLikelyPayments091000100001_after_2nd_payment_linked):
     event: Event
     choices: list[Choice]
     reservations: list[Reservation]
@@ -335,7 +351,7 @@ class GetReservationsWithLikelyPayments001000100001_after_3rd_payment_linked(
         ReservationPayment(reservation=self.reservations[0], payment=Payment.objects.get(src_id="2025-09124")).save()
 
 
-class GetReservationsWithLikelyPayments002000200002(TestCase):
+class GetReservationsWithLikelyPayments092000200002(TestCase):
     event: Event
     choices: list[Choice]
     reservations: list[Reservation]
@@ -345,7 +361,7 @@ class GetReservationsWithLikelyPayments002000200002(TestCase):
         self.event, self.choices, self.reservations = fill_db()
 
     def test_get_reservations_with_likely_payments(self):
-        reservations = list(get_reservations_with_likely_payments(date(2025, 2, 12), Reservation.objects))
+        reservations = list(get_reservations_with_likely_payments(date(2025, 9, 1), Reservation.objects))
         res2 = next(res for res in reservations if res.bank_id == self.reservations[1].bank_id)
         self.assertIsNone(res2.likely_payment_other_account)
         self.assertIsNone(res2.likely_payment_other_name)
@@ -353,7 +369,7 @@ class GetReservationsWithLikelyPayments002000200002(TestCase):
         self.assertIsNone(res2.likely_payment_src_id)
 
 
-class GetReservationsWithLikelyPayments003000300003(TestCase):
+class GetReservationsWithLikelyPayments093000300003(TestCase):
     event: Event
     choices: list[Choice]
     reservations: list[Reservation]
@@ -367,7 +383,7 @@ class GetReservationsWithLikelyPayments003000300003(TestCase):
         self.event, self.choices, self.reservations = fill_db()
 
     def test_get_reservations_with_likely_payments(self):
-        reservations = list(get_reservations_with_likely_payments(date(2025, 2, 12), Reservation.objects))
+        reservations = list(get_reservations_with_likely_payments(date(2025, 9, 1), Reservation.objects))
         res3 = next(res for res in reservations if res.bank_id == self.reservations[2].bank_id)
         self.assertEqual(res3.likely_payment_other_account, self.expected_account)
         self.assertEqual(res3.likely_payment_other_name, self.expected_name)
@@ -375,8 +391,8 @@ class GetReservationsWithLikelyPayments003000300003(TestCase):
         self.assertEqual(res3.likely_payment_src_id, self.expected_src_id)
 
 
-class GetReservationsWithLikelyPayments003000300003_after_1st_payment_linked(
-        GetReservationsWithLikelyPayments003000300003):
+class GetReservationsWithLikelyPayments093000300003_after_1st_payment_linked(
+        GetReservationsWithLikelyPayments093000300003):
     event: Event
     choices: list[Choice]
     reservations: list[Reservation]

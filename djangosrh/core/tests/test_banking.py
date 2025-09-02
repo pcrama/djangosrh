@@ -178,6 +178,7 @@ class ImportBankStatements(django.test.TransactionTestCase):
     ]
 
     def test_non_overlapping_uploads(self):
+        initial_count = Payment.objects.count()
         first_batch = self.bank_statements_csv[:len(self.bank_statements_csv) // 2]
         assert len(first_batch) > 1, "Pre-condition not met: not enough test data for 1st batch"
         second_batch = [self.bank_statements_csv[0]] + self.bank_statements_csv[len(first_batch):]
@@ -187,12 +188,12 @@ class ImportBankStatements(django.test.TransactionTestCase):
         self.assertEqual(len(first_import), len(first_batch) - 1)
         self.maxDiff = None
         self.assertEqual(list(exc for exc, _ in first_import), [None] * len(first_import))
-        self.assertEqual(Payment.objects.count(), len(first_batch) - 1)
+        self.assertEqual(Payment.objects.count() - initial_count, len(first_batch) - 1)
 
         second_import = import_bank_statements(second_batch)
         self.assertEqual(len(second_import), len(second_batch) - 1)
         self.assertTrue(all(exc is None for exc, _ in second_import))
-        self.assertEqual(Payment.objects.count(), len(self.bank_statements_csv) - 1)
+        self.assertEqual(Payment.objects.count() - initial_count, len(self.bank_statements_csv) - 1)
 
         third_import = import_bank_statements(
             [self.bank_statements_csv[0]] + [
@@ -218,18 +219,19 @@ class ImportBankStatements(django.test.TransactionTestCase):
         self.assertEqual(
             Payment.find_by_bank_ref(third_import[-1][-1].bank_ref).src_id, f"{YEAR_PREFIX}-00998"
         )
-        self.assertEqual(Payment.objects.count(), len(self.bank_statements_csv) - 1)
+        self.assertEqual(Payment.objects.count() - initial_count, len(self.bank_statements_csv) - 1)
  
     def test_overlapping_uploads(self):
+        initial_count = Payment.objects.count()
         first_batch = self.bank_statements_csv[:6]
         assert len(first_batch) > 1, "Pre-condition not met: not enough test data for 1st batch"
         second_batch = [self.bank_statements_csv[0]] + self.bank_statements_csv[4:]
         assert len(second_batch) > 1, "Pre-condition not met: not enough test data for 2nd batch"
         import_bank_statements(first_batch)
-        self.assertEqual(Payment.objects.count(), len(first_batch) - 1)
+        self.assertEqual(Payment.objects.count() - initial_count, len(first_batch) - 1)
 
         import_bank_statements(second_batch)
-        self.assertEqual(Payment.objects.count(), len(self.bank_statements_csv) - 1)
+        self.assertEqual(Payment.objects.count() - initial_count, len(self.bank_statements_csv) - 1)
 
 # Local Variables:
 # compile-command: "uv run python ../../manage.py test core"

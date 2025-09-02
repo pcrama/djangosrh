@@ -7,7 +7,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import login_required
 from django.core.mail import EmailMultiAlternatives
 from django.db.models import Exists, OuterRef, Prefetch, QuerySet, Subquery, Sum, IntegerField, CharField
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.http import Http404, HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils import html
@@ -34,9 +34,15 @@ class ReservationListView(LoginRequiredMixin, ListView):
 
     def setup(self, request, *args, **kwargs) -> None:
         super().setup(request, *args, **kwargs)
+        event_id = request.GET.get('event_id')
+        if event_id is not None:
+            try:
+                event_id = int(event_id)
+            except ValueError:
+                raise Http404(f"Invalid event {event_id!r}.")
         self.event = (
             Event.objects.filter(disabled=False).order_by("date").first()
-            if (event_id := request.GET.get('event_id')) is None
+            if event_id is None
             else get_object_or_404(Event, id=event_id))
         self.event_id = None if self.event is None else self.event.id
 
