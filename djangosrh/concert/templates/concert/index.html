@@ -3,6 +3,10 @@
     <title>Reservation application for concerts</title>
   </head>
   <body>
-    <a class="link-primary" href="{% url 'concert:reservations' %}">List of reservations</a>
+    <ul>
+      {% for name, link in events %}
+      <li><a class="link-primary" href="{{ link }}">{{ name }}: List of reservations</a></li>
+      {% endfor %}
+    </ul>
   </body>
 </html>

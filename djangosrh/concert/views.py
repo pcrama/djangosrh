@@ -1,3 +1,4 @@
+import csv
 from datetime import timedelta
 import time
 
@@ -22,7 +23,9 @@ from core.models import get_reservations_with_likely_payments
 from core.views import aux_send_payment_reception_confirmation
 
 def index(request):
-    return render(request, "concert/index.html")
+    events = [(str(evt), reverse("concert:reservations", query={"event_id": evt.id}))
+              for evt in Event.objects.filter(disabled=False).order_by("date")]
+    return render(request, "concert/index.html", context={"events": events})
 
 
 class ReservationListView(LoginRequiredMixin, ListView):
@@ -78,7 +81,7 @@ def reservation_form(request, event_id: int) -> HttpResponse:
             return render(
                 request,
                 "concert/double_reservation.html",
-                {"reservation": recent_reservation})
+                {"reservation": recent_reservation, "event_id": event_id})
     except Exception:
         pass
 
@@ -136,3 +139,31 @@ def show_reservation(request: HttpRequest, uuid: str) -> HttpResponse:
 @login_required
 def send_payment_reception_confirmation(request) -> HttpResponseRedirect:
     return aux_send_payment_reception_confirmation(request, "concert:reservations", "concert:show_reservation")
+
+
+@login_required
+def export_csv(request, event_id: int) -> HttpResponse:
+    event = get_object_or_404(Event, pk=event_id)
+    if event.disabled:
+        return render(request, "ital/event_disabled.html", context={"event": event})
+    reservation_choices = event.reservation_choices()
+    response = HttpResponse(
+        content_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="reservations.csv"'},
+    )
+    writer = csv.writer(response)
+    writer.writerow(["Nom", "Places", "Valeur", "Déjà payé", "Restant dû", *(
+        chc.column_header for chc in reservation_choices)])
+    # N+1 queries, so what... I won't have that many reservations anyway.
+    for res in event.reservation_set.order_by('last_name', 'first_name'):
+        total_due = res.total_due_in_cents
+        remaining = res.remaining_amount_due_in_cents()
+        choice_counts = {res_chc_count.choice.id: res_chc_count.count for res_chc_count in res.reservationchoicecount_set.all()}
+        writer.writerow([
+            res.full_name,
+            str(res.places),
+            cents_to_euros(total_due),
+            cents_to_euros(total_due - remaining),
+            cents_to_euros(remaining),
+            *(choice_counts.get(chc.id, 0) for chc in reservation_choices)])
+    return response

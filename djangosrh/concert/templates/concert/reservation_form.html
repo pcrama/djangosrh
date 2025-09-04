@@ -4,44 +4,41 @@
 {% block style %}
 input[type="number"].form-control { padding-left: 0; padding-right 0; }
 input[type="number"].col-form-control { padding-left: 0; padding-right 0; }
-form#reservation_form_id div.error-message { display: none; }
-form#reservation_form_id div.has-error div.error-message { display: inline; }
 {% endblock %}
 {% block content %}
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-      const errorClass = 'has-error';
+      const errorClass = 'is-invalid';
       const form = document.querySelector('#reservation_form_id');
-      const validations = [
-          {% for pck in form.packs %}
-          {'reference_fields': [{% for itm in pck.items.dt1main %} '{{ itm.id }}',{% endfor %}],
-           'validations': [
-               {% if pck.items.dt0starter %}
-               {'section': '{{ pck.id }}_dt0starter',
-                'validated_fields': [{% for itm in pck.items.dt0starter %} '{{ itm.id }}',{% endfor %}]},
-               {% endif %}
-               {% if pck.items.dt2dessert %}
-               {'section': '{{ pck.id }}_dt2dessert',
-                'validated_fields': [{% for itm in pck.items.dt2dessert %} '{{ itm.id }}',{% endfor %}]},
-               {% endif %}
-           ],
-          },
+      const prices = {
+          {% for inpt in form.choices %}
+          '{{ inpt.id }}': {{ inpt.choice.price_in_cents }},
           {% endfor %}
-      ];
+      };
       function sumOfInputFields(inputFieldIds) {
           return inputFieldIds.reduce((sum, fieldId) => sum + parseInt(document.getElementById(fieldId).value),
                                       0);
       }
-      function runValidation(validation_suite) {
-          const referenceSum = sumOfInputFields(validation_suite.reference_fields);
-          validation_suite.validations.forEach(function(validation) {
-              const section = document.getElementById(validation.section);
-              const inputSum = sumOfInputFields(validation.validated_fields);
-              section.classList.toggle(errorClass, inputSum != referenceSum);
-          });
+      function runValidation(input_id) {
+          const input_field = document.getElementById(input_id);
+          const val = parseInt(input_field.value);
+          if (!Number.isNaN(val) && (0 <= val) && (val < 100)) {
+              input_field.classList.remove(errorClass);
+              return val;
+          }
+          input_field.classList.add(errorClass);
+          return 0;
       }
       function validateAll() {
-          validations.forEach(runValidation);
+          let total_places = 0;
+          for (let key in prices) {
+              total_places += runValidation(key);
+          }
+          if (total_places < 1) {
+              for (let key in prices) {
+                  document.getElementById(key).classList.add(errorClass);
+              }
+          }
       }
       form.addEventListener('submit', function (event) {
           // Reset error classes
@@ -53,25 +50,17 @@ form#reservation_form_id div.has-error div.error-message { display: inline; }
           }
       });
       function updatePrice() {
-          const prices = {
-              {% for dish_inputs in form.single_items.values %}
-                  {% for inpt in dish_inputs %}
-                  '{{ inpt.id }}': {{ inpt.choice.price_in_cents }},
-                  {% endfor %}
-              {% endfor %}
-              {% for pck in form.packs %}
-                  {% for inpt in pck.items.dt1main %}
-                  '{{ inpt.id }}': {{ pck.choice.price_in_cents }},
-                  {% endfor %}
-              {% endfor %}
-          };
           let totalPrice = 0;
           for (let key in prices) {
-              totalPrice += parseInt(document.getElementById(key).value) * prices[key];
+              const val = document.getElementById(key).value;
+              totalPrice += (val == ''?0:parseInt(val)) * prices[key];
           }
           const cents = String(totalPrice % 100).padStart(2, '0');
-          const confirm_or_fix = (form.querySelectorAll('.' + errorClass).length > 0)?'Vérifiez votre commande':'Confirmer';
-          document.getElementById('reservation-submit').value = totalPrice == 0?confirm_or_fix:`${confirm_or_fix}. Prix total: ${totalPrice / 100}.${cents}€`
+          const has_errors = (form.querySelectorAll('.' + errorClass).length > 0);
+          const confirm_or_fix = has_errors?'Vérifiez votre commande':'Confirmer';
+          const submit_button = document.getElementById('reservation-submit');
+          submit_button.value = (Number.isNaN(totalPrice) || (totalPrice == 0))?confirm_or_fix:`${confirm_or_fix}. Prix total: ${totalPrice / 100}.${cents}€`
+          submit_button.classList.toggle("disabled", has_errors);
       }
       form.addEventListener('change', function (event) {
           validateAll();

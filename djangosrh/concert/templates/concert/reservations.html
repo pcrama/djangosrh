@@ -4,7 +4,7 @@
 {% block content %}
 <div class="container">
   <div class="row">
-    <div class="col-sm-3">
+    <div class="col-sm-5">
       Il y a {{ event.reservation_set.count|plural:"réservation" }} pour {{ total_count|plural:"place" }}.
     </div>
     <div class="col-sm-2">
@@ -13,11 +13,9 @@
     <div class="col-sm-2">
       <a class="link-primary" href="{% url 'payments' %}">Gérer paiements</a>
     </div>
-    {% comment %}
     <div class="col-sm-2">
-      <a class="link-primary" href="{% url 'concert:export_csv' event.id %}">Exporter listes</a>
+      <a class="link-primary" href="{% url 'concert:export_csv' event.id %}">Exporter liste</a>
     </div>
-    {% endcomment %}
     <div class="col-sm-1">
       <form action="{% url 'logout' %}" method="post">
         {% csrf_token %}

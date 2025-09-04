@@ -12,18 +12,18 @@ from ..models import (
 
 
 def fill_db() -> tuple[Event, list[Choice], list[Reservation]]:
-    event = Event(
-        name="Gala (Samedi)",
-        date=datetime(2025, 11, 8, 21, 0, 0, tzinfo=timezone.utc),
-        contact_email="dont-spam@me.com",
-        max_seats=200)
-    event.save()
     Event(
         name="Gala (Dimanche)",
         date=datetime(2025, 11, 9, 17, 0, 0, tzinfo=timezone.utc),
         contact_email="dont-spam@me.com",
         max_seats=200
     ).save()
+    event = Event(
+        name="Gala (Samedi)",
+        date=datetime(2025, 11, 8, 21, 0, 0, tzinfo=timezone.utc),
+        contact_email="dont-spam@me.com",
+        max_seats=200)
+    event.save()
     choices = [Choice(display_text=f"<>{name}<>", column_header=name, display_text_plural=f"P({name})", price_in_cents=price_in_cents, available_in=event)
                for name, price_in_cents in (("Adulte", 1500), ("Enfant", 0), ("Étudiant", 1000))]
     for choice in choices:

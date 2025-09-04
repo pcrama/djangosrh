@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, timezone
 from uuid import uuid4
 
 from django.contrib.auth.models import User
@@ -15,6 +15,44 @@ from ..models import (
 )
 
 from .test_models import fill_db
+
+
+class IndexView(TestCase):
+    event: Event
+    choices: list[Choice]
+    reservations: list[Reservation]
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.event, cls.choices, cls.reservations = fill_db()
+        cls.test_url = reverse("concert:index")
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_with_two_enabled_events(self):
+        response = self.client.get(self.test_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "concert/index.html")
+        self.assertContains(response, "Gala (Samedi)")
+        self.assertContains(response, "Gala (Dimanche)")
+
+    def test_with_disabled_event(self):
+        Event(
+            name="Gala (Disabled)",
+            date=datetime(2025, 11, 11, 17, 0, 0, tzinfo=timezone.utc),
+            contact_email="dont-spam@me.com",
+            max_seats=200,
+            disabled=True,
+        ).save()
+
+        response = self.client.get(self.test_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "concert/index.html")
+        self.assertContains(response, "Gala (Samedi)")
+        self.assertContains(response, "Gala (Dimanche)")
+        self.assertNotContains(response, "Gala (Disabled)")
 
 
 class ReservationFormViewTests(TestCase):
@@ -198,6 +236,29 @@ class AdminTestCase(TestCase):
                          [(f'/login?next={self.test_url}', 302),
                           (f'/login/?next={self.test_url.replace("/", "%2F")}', 301)])
         self.assertNotEqual(len(response.content), 0)
+
+
+class GetExportCsvWithExampleList(AdminTestCase):
+    test_url: str
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+    def setUp(self):
+        self.test_url = reverse('concert:export_csv', kwargs={'event_id': self.event.id})
+
+    def test_no_login__redirects(self):
+        self.do_test_no_login__redirects()
+
+    def test_after_login__lists_reservations(self):
+        self.client.force_login(self.user)
+        response = self.client.get(self.test_url, follow=False)
+        self.assertEqual(response.content.decode('utf8'),
+                         'Nom,Places,Valeur,Déjà payé,Restant dû,Adulte,Enfant,Étudiant\r\n'
+                         'Priv Ate,1,22.00€,0.00€,22.00€,0,0,1\r\n'
+                         'Mme Lara Croft,1,28.00€,0.00€,28.00€,1,0,0\r\n'
+                         'Mr Dupont,5,79.00€,1.00€,78.00€,2,2,1\r\n')
 
 
 class ReservationList(AdminTestCase):
@@ -404,35 +465,6 @@ class GetReservationsWithLikelyPayments093000300003_after_1st_payment_linked(
     def setUp(self):
         super().setUp()
         ReservationPayment(reservation=self.reservations[2], payment=Payment.objects.get(src_id="2025-0901")).save()
-
-
-# class GetExportCsvWithExampleList(TestCase):
-#     user: User
-#     test_url: str
-
-#     def setUp(self):
-#         super().setUp()
-#         event, *_ = fill_db()
-#         self.user = User.objects.create_user("john", "lennon@thebeatles.com", "johnpassword")
-#         self.test_url = reverse('ital:export_csv', kwargs={'event_id': event.id})
-
-#     def test_no_login__redirects(self):
-#         c = Client()
-#         response = c.get(self.test_url, follow=True)
-#         self.assertEqual(response.redirect_chain,
-#                          [(f'/login?next={self.test_url}', 302),
-#                           (f'/login/?next={self.test_url.replace("/", "%2F")}', 301)])
-#         self.assertNotEqual(len(response.content), 0)
-
-#     def test_after_login__lists_reservations(self):
-#         c = Client()
-#         c.force_login(self.user)
-#         response = c.get(self.test_url, follow=False)
-#         self.assertEqual(response.content.decode('utf8'),
-#                          'Nom,Places,Valeur,Déjà payé,Restant dû,Tomate Mozza,Croquettes,Bolo,Scampis,Vegetarian,Tiramisu,Glace,Commentaire\r\n'
-#                          'Priv Ate,1,22.00€,0.00€,22.00€,0,1,1,0,0,1,0,th¡rd\r\n'
-#                          'Mme Lara Croft,3,28.00€,0.00€,28.00€,0,1,1,0,0,2,0,\r\n'
-#                          'Mr Dupont,2,79.00€,1.00€,78.00€,2,1,0,1,1,1,1,First reservation\r\n')
 
 # Local Variables:
 # compile-command: "uv run python ../../manage.py test concert"
