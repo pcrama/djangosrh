@@ -8,6 +8,7 @@ from django.urls import reverse
 
 from core.models import Payment, ReservationPayment
 from core.models import get_reservations_with_likely_payments
+from ..forms import ReservationForm
 from ..models import (
     Choice,
     Event,
@@ -98,12 +99,13 @@ class ReservationFormViewTests(TestCase):
         """Posting a valid reservation should create Reservation and redirect."""
         unique_email = f"john.{uuid4().hex}@example.com"
         url = reverse("concert:reservation_form", args=[self.event.id])
+        blank_reservation = ReservationForm(self.event) # get input names from empty form
         post_data = {
             "civility": "Mr",
             "first_name": "John",
             "last_name": "Doe",
             "email": unique_email,
-            f"choice_{self.choices[0].id}": "2",
+                    blank_reservation.choices[0].id: "2",
         }
         response = self.client.post(url, data=post_data)
         self.assertEqual(response.status_code, 302)
@@ -131,6 +133,7 @@ class ReservationFormViewTests(TestCase):
     def test_double_reservation_detected(self):
         """After posting a valid reservation, a second GET should show double_reservation template."""
         url = reverse("concert:reservation_form", args=[self.event.id])
+        blank_reservation = ReservationForm(self.event) # get input names from empty form
 
         # 1. Make a valid POST to create a reservation
         post_data = {
@@ -138,7 +141,7 @@ class ReservationFormViewTests(TestCase):
             "first_name": "Alice",
             "last_name": "Smith",
             "email": "alice@example.com",
-            f"choice_{self.choices[0].id}": "1",
+            blank_reservation.choices[0].id: "1",
         }
         response = self.client.post(url, data=post_data)
         self.assertEqual(response.status_code, 302)

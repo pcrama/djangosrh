@@ -73,6 +73,39 @@ class IntegrationTestCases(TestCase):
         data = reservation.save()
         self.assertIsNone(data)
 
+    def test_ReservationForm__zero_places_in_total(self):
+        # get input names from empty form
+        blank_reservation = ReservationForm(self.event)
+        adultes = self.get_input(blank_reservation, "<>Adulte<>")
+        enfants = self.get_input(blank_reservation, "<>Enfant<>")
+        etudiants = self.get_input(blank_reservation, "<>Étudiant<>")
+        reservation = ReservationForm(self.event, {
+            adultes.name: "0",
+            enfants.name: "0",
+            etudiants.name: "0",
+            "first_name": "First",
+            "last_name": "Last (no places)",
+            "email": "no@plac.es",
+        })
+
+        self.assertFalse(reservation.is_valid())
+        input_ = self.get_input(reservation, "<>Adulte<>")
+        self.assertEqual(len(input_.errors), 0)
+        self.assertEqual(input_.value, 0)
+        input_ = self.get_input(reservation, "<>Enfant<>")
+        self.assertEqual(len(input_.errors), 0)
+        self.assertEqual(input_.value, 0)
+        input_ = self.get_input(reservation, "<>Étudiant<>")
+        self.assertEqual(len(input_.errors), 0)
+        self.assertEqual(input_.value, 0)
+        self.assertEqual(reservation.last_name.value, "Last (no places)")
+        self.assertEqual(reservation.first_name.value, "First")
+        self.assertEqual(reservation.email.value, "no@plac.es")
+        self.assertFalse(reservation.accepts_rgpd_reuse.value)
+        self.assertIn("strictly positive", reservation.errors[0])
+        data = reservation.save()
+        self.assertIsNone(data)
+
     def test_ReservationForm__valid_3_adultes_2_enfants_1_etudiant(self):
         # get input names from empty form
         blank_reservation = ReservationForm(self.event)

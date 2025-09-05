@@ -53,14 +53,22 @@ input[type="number"].col-form-control { padding-left: 0; padding-right 0; }
           let totalPrice = 0;
           for (let key in prices) {
               const val = document.getElementById(key).value;
-              totalPrice += (val == ''?0:parseInt(val)) * prices[key];
+              const val_num = val == ''?0:parseInt(val);
+              totalPrice += (val_num < 1?0:val_num) * prices[key];
+          }
+          if (totalPrice < 0) {
+              totalPrice = 0;
           }
           const cents = String(totalPrice % 100).padStart(2, '0');
           const has_errors = (form.querySelectorAll('.' + errorClass).length > 0);
           const confirm_or_fix = has_errors?'Vérifiez votre commande':'Confirmer';
           const submit_button = document.getElementById('reservation-submit');
           submit_button.value = (Number.isNaN(totalPrice) || (totalPrice == 0))?confirm_or_fix:`${confirm_or_fix}. Prix total: ${totalPrice / 100}.${cents}€`
-          submit_button.classList.toggle("disabled", has_errors);
+          if (has_errors) {
+              submit_button.disabled = "disabled";
+          } else {
+              submit_button.removeAttribute("disabled");
+          }
       }
       form.addEventListener('change', function (event) {
           validateAll();
@@ -127,6 +135,6 @@ input[type="number"].col-form-control { padding-left: 0; padding-right 0; }
   {% if form.was_validated and form.errors %}
   <div class="row invalid-feedback" style="display: inline;">{% for err in form.errors %}{{ err }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</div>
   {% endif %}
-  <div class="container"><div class="row"><input class="form-control" type="submit" value="OK" id="reservation-submit"></div></div>
+  <div class="container"><div class="row"><input class="form-control btn btn-primary" type="submit" value="OK" id="reservation-submit"></div></div>
 </form>
 {% endblock %}

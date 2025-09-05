@@ -33,7 +33,7 @@ class ReservationForm:
                 [self.last_name, self.first_name, self.email, self.accepts_rgpd_reuse]):
             if inpt.errors:
                 return False
-        return True
+        return self.errors == []
 
     def clean_data(self):
         def _make_input(id: str, default: Any, errors: Callable[[str], list[str]], parse: Callable[[Any], Any]|None=None) -> ReservationForm.Input:
@@ -68,17 +68,6 @@ class ReservationForm:
         def _mandatory_email(id: str) -> list[str]:
             return _mandatory(id) or (
                 [] if id in self.data and (ss := self.data[id]) and isinstance(ss, str) and re.match(r" *[a-zA-Z.0-9-]+@[a-zA-Z.0-9-]+ *", ss) else ["Invalid email"])
-        def _mandatory_in_range(low: int, high: int) -> Callable[[str], list[str]]:
-            def work(id: str) -> list[str]:
-                if (err := _mandatory(id)):
-                    return err
-                ss = self.data.get(id)
-                try:
-                    vv = int(ss)
-                except Exception:
-                    return [f"Must be between {low} and {high}"]
-                return [] if low <= vv <= high else [f"Must be between {low} and {high}"]
-            return work
         self.civility = _make_input("civility", Reservation.civility.field.default, _in_set([Civility.man, Civility.woman, Civility.__empty__]))
         self.last_name = _make_input("last_name", "", _non_blank)
         self.first_name = _make_input("first_name", Reservation.first_name.field.default, _any)
@@ -87,7 +76,9 @@ class ReservationForm:
         self.validate_choices()
 
     def validate_choices(self):
+        MAX_ALLOWED = 25
         total_due_in_cents = 0
+        total_choices = 0
         idx = 0
         for choice in self.event.choice_set.all():
             errors: list[str] = []
@@ -102,11 +93,14 @@ class ReservationForm:
             else:
                 if val < 0:
                     errors.append("Must not be negative")
-                elif val > 20:
-                    errors.append("Too large")
+                elif val > MAX_ALLOWED:
+                    errors.append(f"Too large, must be {MAX_ALLOWED} or less")
             self.choices.append(self.Input(
                 id=key, name=key, value=val, errors=errors if self.was_validated else [], choice=choice))
             total_due_in_cents += choice.price_in_cents * val
+            total_choices += val
+        if total_choices < 1:
+            self.errors.append("Total number of choices must be strictly positive")
         self.total_due_in_cents = total_due_in_cents
 
     def save(self) -> Reservation | None:
@@ -117,9 +111,9 @@ class ReservationForm:
             reservation = Reservation(
                 event=self.event,
                 civility=self.civility.value,
-                first_name=self.first_name.value,
-                last_name=self.last_name.value,
-                email=self.email.value,
+                first_name=self.first_name.value.strip(),
+                last_name=self.last_name.value.strip(),
+                email=self.email.value.strip(),
                 accepts_rgpd_reuse=self.accepts_rgpd_reuse.value,
                 total_due_in_cents=self.total_due_in_cents,
                 bank_id=generate_bank_id(time.time(), Reservation.objects.count()),
