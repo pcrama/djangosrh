@@ -85,6 +85,7 @@ input[type="number"].col-form-control { padding-left: 0; padding-right 0; }
       updatePrice();
   });
 </script>
+<h1>{{ form.event.name }}</h1><h2>{{ form.event.date.day }}/{{ form.event.date.month }}/{{ form.event.date.year }}</h2>
 <form id="reservation_form_id" action="{% url 'concert:reservation_form' form.event.id %}" method="post">
   {% csrf_token %}
   {% if form.was_validated and form.errors %}

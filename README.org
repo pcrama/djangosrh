@@ -69,7 +69,7 @@ Import production data dump into local DB:
   destdir="$HOME/www/django1"
   [ -d "$destdir" ] || git clone git@github.com:pcrama/djangosrh.git "$destdir"
   [ -d "$destdir/env" ] \
-      || ( cd "$destdir" && python -m venv env && "$destdir/env/bin/pip install -r requirements.txt")
+      || ( cd "$destdir" && python -m venv env && "$destdir/env/bin/pip" install -r requirements.txt)
   cd "$destdir/djangosrh/"
   source "$destdir/env/bin/activate"
   python manage.py migrate
