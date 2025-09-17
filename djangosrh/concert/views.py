@@ -153,7 +153,7 @@ def export_csv(request, event_id: int) -> HttpResponse:
     )
     writer = csv.writer(response)
     writer.writerow(["Nom", "Places", "Valeur", "Déjà payé", "Restant dû", *(
-        chc.column_header for chc in reservation_choices)])
+        chc.column_header for chc in reservation_choices), "Commentaire"])
     # N+1 queries, so what... I won't have that many reservations anyway.
     for res in event.reservation_set.order_by('last_name', 'first_name'):
         total_due = res.total_due_in_cents
@@ -165,5 +165,6 @@ def export_csv(request, event_id: int) -> HttpResponse:
             cents_to_euros(total_due),
             cents_to_euros(total_due - remaining),
             cents_to_euros(remaining),
-            *(choice_counts.get(chc.id, 0) for chc in reservation_choices)])
+            *(choice_counts.get(chc.id, 0) for chc in reservation_choices),
+            res.extra_comment])
     return response

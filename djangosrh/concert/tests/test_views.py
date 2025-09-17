@@ -258,10 +258,10 @@ class GetExportCsvWithExampleList(AdminTestCase):
         self.client.force_login(self.user)
         response = self.client.get(self.test_url, follow=False)
         self.assertEqual(response.content.decode('utf8'),
-                         'Nom,Places,Valeur,Déjà payé,Restant dû,Adulte,Enfant,Étudiant\r\n'
-                         'Priv Ate,1,22.00€,0.00€,22.00€,0,0,1\r\n'
-                         'Mme Lara Croft,1,28.00€,0.00€,28.00€,1,0,0\r\n'
-                         'Mr Dupont,5,79.00€,1.00€,78.00€,2,2,1\r\n')
+                         'Nom,Places,Valeur,Déjà payé,Restant dû,Adulte,Enfant,Étudiant,Commentaire\r\n'
+                         'Priv Ate,1,22.00€,0.00€,22.00€,0,0,1,\r\n'
+                         'Mme Lara Croft,1,28.00€,0.00€,28.00€,1,0,0,\r\n'
+                         'Mr Dupont,5,79.00€,1.00€,78.00€,2,2,1,"Places offertes, donc ""gratuites"""\r\n')
 
 
 class ReservationList(AdminTestCase):

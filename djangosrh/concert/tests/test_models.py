@@ -39,6 +39,7 @@ def fill_db() -> tuple[Event, list[Choice], list[Reservation]]:
         total_due_in_cents=7900,
         event=event,
         bank_id="091000100001",
+        extra_comment="Places offertes, donc \"gratuites\"",
     ))
     rsrvtn.save()
     for choice_idx, count in ((0, 2), (1, 2), (2, 1)):
