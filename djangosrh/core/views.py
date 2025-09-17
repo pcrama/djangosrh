@@ -83,23 +83,27 @@ def upload_payment_csv(request):
 
 
 
-def aux_send_payment_reception_confirmation(request, redirect_view: str, show_reservation_view: str) -> HttpResponseRedirect:
+def aux_send_payment_reception_confirmation(request, event_class: type, redirect_view: str, show_reservation_view: str) -> HttpResponseRedirect:
     if request.method != "POST":
         return HttpResponseRedirect(reverse(redirect_view))
 
+    event = get_object_or_404(event_class, pk=request.POST["event_id"])
     payment = get_object_or_404(Payment, pk=request.POST["payment_id"])
     reservation = get_object_or_404(BaseReservation, pk=request.POST["reservation_id"])
-    event = reservation.base_event
+    base_event = reservation.base_event
+    if event.base_event_ptr_id != base_event.id:
+        messages.add_message(request, messages.ERROR, f"Conflicting event ids")
+        return HttpResponseRedirect(reverse(redirect_view))
 
     reservation_payment = ReservationPayment(payment=payment, reservation=reservation, confirmation_sent_timestamp=None)
     reservation_payment.save()
 
-    template = (event.full_payment_confirmation_template
+    template = (base_event.full_payment_confirmation_template
                 if (remaining_amount_due_in_cents := reservation.remaining_amount_due_in_cents()) <= 0
-                else event.partial_payment_confirmation_template)
-    for key,val in (("organizer_name", html.escape(event.organizer_name)),
-                    ("organizer_bic", html.escape(event.organizer_bic)),
-                    ('bank_account', html.escape(event.bank_account)),
+                else base_event.partial_payment_confirmation_template)
+    for key,val in (("organizer_name", html.escape(base_event.organizer_name)),
+                    ("organizer_bic", html.escape(base_event.organizer_bic)),
+                    ('bank_account', html.escape(base_event.bank_account)),
                     ('reservation_url', request.build_absolute_uri(reverse(show_reservation_view, kwargs={"uuid": reservation.uuid}))),
                     ('formatted_bank_id', html.escape(format_bank_id(reservation.bank_id))),
                     ('remaining_amount_in_euro', html.escape(cents_to_euros(remaining_amount_due_in_cents))),
@@ -107,12 +111,12 @@ def aux_send_payment_reception_confirmation(request, redirect_view: str, show_re
         template = template.replace(f"%{key}%", val)
 
     msg = EmailMultiAlternatives(
-        f"Merci pour votre paiement pour le {event.name}",
+        f"Merci pour votre paiement pour le {base_event.name}",
         "Please see the attached HTML message. Veuillez lire le message HTML joint, svp.",
         settings.EMAIL_HOST_USER,
         [reservation.email],
-        cc=[event.contact_email],
-        reply_to=[event.contact_email])
+        cc=[base_event.contact_email],
+        reply_to=[base_event.contact_email])
     msg.attach_alternative(template, "text/html")
 
     try:
@@ -124,4 +128,4 @@ def aux_send_payment_reception_confirmation(request, redirect_view: str, show_re
         reservation_payment.save()
         messages.add_message(request, messages.INFO, f"Confirmation mail sent to {reservation.email}.")
 
-    return HttpResponseRedirect(reverse(redirect_view))
+        return HttpResponseRedirect(reverse(redirect_view, query={"event_id": event.id}))

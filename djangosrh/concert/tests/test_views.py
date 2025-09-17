@@ -323,7 +323,7 @@ class SendPaymentReceptionConfirmation(AdminTestCase):
         payment_id = 9999
         response = self.client.post(
             reverse("concert:send_payment_reception_confirmation"),
-            {"payment_id": payment_id, "reservation_id": self.reservations[0].id},
+            {"payment_id": payment_id, "reservation_id": self.reservations[0].id, "event_id": self.event.id},
         )
         self.assertEqual(response.status_code, 404)
         self.assertEqual(len(mail.outbox), 0)
@@ -335,7 +335,19 @@ class SendPaymentReceptionConfirmation(AdminTestCase):
         self.client.force_login(self.user)
         response = self.client.post(
             reverse("concert:send_payment_reception_confirmation"),
-            {"payment_id": self.payment.id, "reservation_id": 9999},
+            {"payment_id": self.payment.id, "reservation_id": 9999, "event_id": self.event.id},
+        )
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(len(mail.outbox), 0)
+        self.assertRaises(
+            ReservationPayment.DoesNotExist, ReservationPayment.objects.get, payment_id=self.payment.id)
+
+    def test_404_if_event_does_not_exist(self):
+        """POST should return 404 if event does not exist"""
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("concert:send_payment_reception_confirmation"),
+            {"payment_id": self.payment.id, "reservation_id": self.reservations[0].id, "event_id": 9999},
         )
         self.assertEqual(response.status_code, 404)
         self.assertEqual(len(mail.outbox), 0)
@@ -347,7 +359,7 @@ class SendPaymentReceptionConfirmation(AdminTestCase):
         self.client.force_login(self.user)
         response = self.client.post(
             reverse("concert:send_payment_reception_confirmation"),
-            {"payment_id": self.payment.id, "reservation_id": self.reservations[0].id},
+            {"payment_id": self.payment.id, "reservation_id": self.reservations[0].id, "event_id": self.event.id},
         )
         self.assertEqual(response.status_code, 302)
         self.assertEqual(len(mail.outbox), 1)

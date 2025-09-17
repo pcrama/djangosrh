@@ -136,7 +136,7 @@ def reservation_form(request, event_id: int) -> HttpResponse:
 
 @login_required
 def send_payment_reception_confirmation(request) -> HttpResponseRedirect:
-    return aux_send_payment_reception_confirmation(request, "ital:reservations", "ital:show_reservation")
+    return aux_send_payment_reception_confirmation(request, Event, "ital:reservations", "ital:show_reservation")
 
 
 @login_required

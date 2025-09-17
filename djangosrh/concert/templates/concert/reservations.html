@@ -71,6 +71,7 @@
           {% csrf_token %}
           <input type="hidden" name="payment_id" value="{{ reservation.likely_payment_id }}">
           <input type="hidden" name="reservation_id" value="{{ reservation.id }}">
+          <input type="hidden" name="event_id" value="{{ event.id }}">
           <input type="submit" value="{{ reservation.likely_payment_other_name|default:reservation.likely_payment_other_account }}: {{ reservation.likely_payment_amount_in_cents|cents_to_euros }}"></form>{% endif %}
       </td>
     </tr>
