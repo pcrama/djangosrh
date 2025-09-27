@@ -8,6 +8,7 @@ form#reservation_form_id div.error-message { display: none; }
 form#reservation_form_id div.has-error div.error-message { display: inline; }
 {% endblock %}
 {% block content %}
+{% if form.event.extra_info %}<p>{{ form.event.extra_info }}</p>{% endif %}
 <script>
   document.addEventListener('DOMContentLoaded', function () {
       const errorClass = 'has-error';

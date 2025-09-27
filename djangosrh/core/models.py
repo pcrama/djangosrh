@@ -8,6 +8,7 @@ from django.db import models
 class BaseEvent(models.Model):
     name = models.CharField(max_length=200)
     date = models.DateField()
+    extra_info = models.CharField(max_length=1000, default="")
     contact_email = models.CharField(max_length=200)
     organizer_name = models.CharField(max_length=200, default="Organizer name")
     organizer_bic = models.CharField(max_length=16, default="GABBBEBB")
