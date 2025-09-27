@@ -2,8 +2,8 @@
 {% load currency_filter %}
 {% block title %}Generate tickets for {{ form.event.name }}{% endblock %}
 {% block style %}
-input[type="number"].form-control { padding-left: 0; padding-right 0; }
-input[type="number"].col-form-control { padding-left: 0; padding-right 0; }
+input[type="number"].form-control { padding-left: 0; padding-right: 0; }
+input[type="number"].col-form-control { padding-left: 0; padding-right: 0; }
 {% endblock %}
 {% block content %}
 <form id="item_tickets_generation_form_id" action="{% url 'ital:item_tickets' form.event.id %}" method="post">
