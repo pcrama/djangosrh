@@ -61,7 +61,7 @@ input[type="number"].col-form-control { padding-left: 0; padding-right: 0; }
           }
           const cents = String(totalPrice % 100).padStart(2, '0');
           const has_errors = (form.querySelectorAll('.' + errorClass).length > 0);
-          const confirm_or_fix = has_errors?'Vérifiez votre commande':'Confirmer';
+          const confirm_or_fix = has_errors?'Vérifiez votre commande':'Cliquez pour confirmer';
           const submit_button = document.getElementById('reservation-submit');
           submit_button.value = (Number.isNaN(totalPrice) || (totalPrice == 0))?confirm_or_fix:`${confirm_or_fix}. Prix total: ${totalPrice / 100}.${cents}€`
           if (has_errors) {
