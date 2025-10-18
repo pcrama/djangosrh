@@ -1,0 +1,300 @@
+/* Font */
+@import url('https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@400;500;600;700&display=swap');
+
+/* Variables */
+:root {
+    --c-brand: #ff9966; /*#f83691;*/
+    --c-brand-rgb: 255, 153, 102;
+    --c-dark: #303050;
+    --c-body: #636383;
+    --c-light: #fcd8c4;
+    --f-main: "Bai Jamjuree", sans-serif;
+    --transition: all .4s cubic-bezier(.165, .84, .44, 1);
+    --shadow: 0px 15px 40px rgba(0, 0, 0, 0.1);
+}
+
+.couleur-de-marque {
+    background-color: var(--c-brand);
+}
+.couleur-de-marque-texte h1 {
+    color: var(--c-brand);
+}
+
+/* Reset & Helpers */
+body {
+    font-family: var(--f-main);
+    color: var(--c-body);
+    line-height: 1.7;
+}
+
+h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 {
+    font-weight: 700;
+    color: var(--c-dark);
+}
+
+a {
+    text-decoration: none;
+    color: var(--c-dark);
+    transition: var(--transition);
+}
+
+a:hover {
+    color: var(--c-brand);
+}
+
+img {
+    width: 100%;
+}
+
+.section-padding {
+    padding-top: 120px;
+    padding-bottom: 120px;
+}
+
+.section-padding-agenda {
+    padding-top: 120px;
+    padding-bottom: 10px;
+}
+
+.text-brand {
+	color: var(--c-brand);
+}
+
+.section-title {
+	max-width: 560px; /* auto;  si on veut que ça prenne toute la largeur */
+	margin: 0 auto 60px auto;
+}
+
+.section-title .line {
+	width: 60px;
+	height: 2px;
+	background-color: var(--c-brand);
+	display: inline-block;
+}
+
+.section-connector {
+	position: relative;
+}
+
+.section-connector::after {
+	content:'';
+	width: 4px;
+	height: 100px;
+	background-color: var(--c-brand);
+	position: absolute;
+	top: -50px;
+	left: 50%;
+}
+
+/* Navbar */
+.navbar {
+    padding-top: 10px;
+    padding-bottom: 10px;
+	transition: var(--transition);
+}
+
+.navbar.scrolled {
+	padding-top: 7px;
+	padding-bottom: 7px;
+	background-color: white;
+}
+
+@media (min-width: 992px) {
+    .navbar-expand-lg .navbar-nav .nav-link {
+        padding-right: 16px;
+        padding-left: 16px;
+    }
+}
+
+.navbar .navbar-nav .nav-link {
+    font-weight: 700;
+    color: var(--c-dark);
+}
+
+.navbar .navbar-nav .nav-link:hover {
+    color: var(--c-brand);
+}
+
+.navbar-brand {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--c-dark);
+}
+
+.social-icon {
+    width: 36px;
+    height: 36px;
+    background-color: var(--c-brand);
+    color: white;
+    border: 2px solid var(--c-brand);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 6px;
+}
+
+.social-icon:hover {
+    background-color: transparent;
+}
+
+/* Btn */
+.btn {
+    padding: 10px 24px;
+    border-radius: 0;
+    border-width: 2px;
+    font-weight: 500;
+}
+
+.btn-brand {
+    background-color: var(--c-brand);
+    color: white;
+    border-color: var(--c-brand);
+}
+
+.btn-brand:hover {
+    background-color: transparent;
+    color: var(--c-brand);
+    border-color: var(--c-brand);
+}
+
+/* Home */
+/*           ceci a été déplacé dans index.php
+#home {
+    background-image: url(../images/fond-accueil--4.jpg);
+    background-position: center;
+    background-size: cover;
+	filter: brightness(90%);
+}
+*/
+
+.plussombre
+{
+	background:rgba(0,0,0,0.5);
+    padding: 30px;
+}
+
+/* Services */
+.service-icon {
+	width: 60px;
+	height: 60px;
+	background-color: var(--c-brand);
+	color: white;
+	font-size: 28px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.custom-link {
+	display: inline-flex;
+	align-items: center;
+}
+
+.custom-link span {
+	font-weight: 700;
+}
+
+.custom-link i {
+	width: 24px;
+	height: 24px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background-color: var(--c-brand); 
+	border-radius: 100px;
+	color: white;
+	margin-left: 6px;
+	transition: var(--transition);
+}
+
+.custom-link:hover i {
+	transform: translateX(10px);
+}
+
+/* Project */
+.project { 
+	overflow: hidden;
+	position: relative;
+}
+
+.project .content { 
+	position: absolute;
+	top: 100%;
+	left: 0;
+	background-color: var(--c-brand);
+	width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.project img, .project .content {
+	transition: var(--transition);
+}
+
+.project:hover .content {
+	top: 0;
+}
+
+.project:hover img {
+	transform: translateY(-100%);
+}
+
+/* Sponsors */
+.sponsors {
+    margin-top: -1px;
+    margin-left: -1px;
+	text-align: center;
+}
+.sponsors img {
+    opacity: 0.7;
+    height: 275px;
+    width: 400px;
+    object-fit: contain;
+    background-size: cover;
+}
+.sponsors img:hover {
+    opacity: 1;
+}
+
+
+/* Footer */
+footer {
+    background-color: var(--c-dark);
+    padding-top: 80px;
+}
+
+footer h4 {
+    color: white;
+    margin-bottom: 24px;
+}
+
+footer p,
+footer li, 
+footer li a {
+    color: rgba(255,255,255, 0.7);
+}
+
+footer ul {
+    list-style: none;
+    padding: 0;
+}
+
+footer ul li {
+    margin-top: 6px;
+}
+
+.footer-top {
+    padding-bottom: 40px;
+    border-bottom: 1px solid rgba(255,255,255, 0.1);
+}
+
+.footer-bottom {
+    padding-top: 40px;
+    padding-bottom: 40px;
+}
+
+.footer-bottom a {
+    color: var(--c-brand);
+}
