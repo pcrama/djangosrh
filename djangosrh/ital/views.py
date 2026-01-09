@@ -15,6 +15,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils import html
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import ListView
 
 import qrcode
@@ -94,6 +95,7 @@ class ReservationListView(LoginRequiredMixin, ListView):
         return context
 
 
+@csrf_exempt
 def reservation_form(request, event_id: int) -> HttpResponse:
     try:
         if request.method == "POST" or request.GET.get("force") == "True":

@@ -90,7 +90,7 @@ form#reservation_form_id div.has-error div.error-message { display: inline; }
   });
 </script>
 <form id="reservation_form_id" action="{% url 'ital:reservation_form' form.event.id %}" method="post">
-  {% csrf_token %}
+  {# % csrf_token % #}
   {% if form.was_validated and form.errors %}
   <div class="row invalid-feedback" style="display: inline;">{% for err in form.errors %}{{ err }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</div>
   {% endif %}
