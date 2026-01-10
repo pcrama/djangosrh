@@ -10,7 +10,22 @@
     <link rel="stylesheet" href="{% static 'core/app.css' %}">
     <style>
       {% block style %}{% endblock %}
+      .top-section-padding { padding-top: var(--nav-height, 6rem); }
     </style>
+    <script>
+      function updateNavHeight() {
+          const nav = document.getElementById("navbar");
+          if (nav) {
+              document.documentElement.style.setProperty(
+                  "--nav-height",
+                  nav.offsetHeight + "px"
+              );
+          }
+      }
+
+      window.addEventListener("load", updateNavHeight);
+      window.addEventListener("resize", updateNavHeight);
+    </script>
   </head>
   <body>
     <!-- navbar -->
@@ -31,7 +46,7 @@
             <li class="nav-item">
               <a class="social-icon" href="https://www.youtube.com/@raphaeldagostino" target="_blank">
                 <i class="ri-youtube-line"></i></a></li></ul></div></div></nav>
-    <section class="section-padding container">
+    <section class="section-padding container top-section-padding">
       {% for message in messages %}
       <div class="alert {{ message.tags }}" role="alert">{{ message | safe }}</div>
       {% endfor %}
