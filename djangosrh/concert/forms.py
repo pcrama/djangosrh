@@ -67,7 +67,7 @@ class ReservationForm:
             return []
         def _mandatory_email(id: str) -> list[str]:
             return _mandatory(id) or (
-                [] if id in self.data and (ss := self.data[id]) and isinstance(ss, str) and re.match(r" *[a-zA-Z.0-9_-]+@[a-zA-Z.0-9-]+ *", ss) else ["Invalid email"])
+                [] if id in self.data and (ss := self.data[id]) and isinstance(ss, str) and re.match(r" *[a-zA-Z.0-9_+-]+@[a-zA-Z.0-9-]+ *", ss) else ["Invalid email"])
         self.civility = _make_input("civility", Reservation.civility.field.default, _in_set([Civility.man, Civility.woman, Civility.__empty__]))
         self.last_name = _make_input("last_name", "", _non_blank)
         self.first_name = _make_input("first_name", Reservation.first_name.field.default, _any)

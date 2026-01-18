@@ -1,5 +1,6 @@
 from datetime import date, datetime, timezone
 from typing import Mapping
+from uuid import uuid4
 
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
@@ -7,8 +8,10 @@ from django.urls import reverse
 
 from core.models import Payment, ReservationPayment
 from core.models import get_reservations_with_likely_payments
+from ..forms import ReservationForm
 from ..models import (
     Choice,
+    DishType,
     Event,
     Item,
     Reservation,
@@ -156,6 +159,56 @@ class GetExportCsvWithExampleList(TestCase):
                          'Priv Ate,1,22.00€,0.00€,22.00€,0,1,1,0,0,1,0,th¡rd\r\n'
                          'Mme Lara Croft,3,28.00€,0.00€,28.00€,0,1,1,0,0,2,0,\r\n'
                          'Mr Dupont,2,79.00€,1.00€,78.00€,2,1,0,1,1,1,1,First reservation\r\n')
+
+
+class ReservationFormViewTests(TestCase):
+    event: Event
+    items: list[Item]
+    choices_to_items: list[tuple[Choice, list[Item]]]
+    reservations: list[Reservation]
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.event, cls.items, cls.choices_to_items, cls.reservations = fill_db()
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_get_reservation_form_ok(self):
+        """GET should render the reservation form."""
+        url = reverse("ital:reservation_form", args=[self.event.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "ital/reservation_form.html")
+        self.assertContains(response, "Souper Italien")
+
+    def test_post_email_with_underscore_and_dash_is_accepted(self):
+        unique_email = f"jo_hn{uuid4().hex}-da.sh+plus@example.com"
+        url = reverse("ital:reservation_form", args=[self.event.id])
+        blank_reservation = ReservationForm(self.event) # get input names from empty form
+        pack0items = blank_reservation.packs[0].items
+        post_data = {
+            "civility": "Mr",
+            "first_name": "John",
+            "last_name": "Doe",
+            "email": unique_email,
+            "places": "2",
+            pack0items[DishType.DT1MAIN][0].name: "2",
+            pack0items[DishType.DT2DESSERT][0].name: "2",
+        }
+        try:
+            post_data[pack0items[DishType.DT0STARTER][0].name] = "2"
+        except (KeyError, IndexError):
+            pass
+        response = self.client.post(url, data=post_data)
+        self.assertEqual(response.status_code, 302)
+        reservation = Reservation.objects.get(email=unique_email)
+        self.assertIsNotNone(reservation)
+        self.assertIn(str(reservation.uuid), response.url)
+        self.assertEqual(reservation.first_name, "John")
+        self.assertEqual(reservation.last_name, "Doe")
+        self.assertEqual(reservation.email, unique_email)
 
 # Local Variables:
 # compile-command: "uv run python ../../manage.py test ital"

@@ -115,7 +115,7 @@ class ReservationFormViewTests(TestCase):
 
     def test_post_invalid_reservation_rerenders_with_user_input(self):
         """Posting invalid data should re-render the form with 422."""
-        invalid_unique_email = f"john+{uuid4().hex}@@x.y"
+        invalid_unique_email = f"john{uuid4().hex}@@x.y"
         url = reverse("concert:reservation_form", args=[self.event.id])
         post_data = {
             "civility": "Mr",
@@ -131,7 +131,7 @@ class ReservationFormViewTests(TestCase):
             self.assertContains(response, fragment, status_code=422)
 
     def test_post_email_with_underscore_and_dash_is_accepted(self):
-        unique_email = f"jo_hn{uuid4().hex}-da.sh@example.com"
+        unique_email = f"jo_hn{uuid4().hex}-da.sh+plus@example.com"
         url = reverse("concert:reservation_form", args=[self.event.id])
         blank_reservation = ReservationForm(self.event) # get input names from empty form
         post_data = {
